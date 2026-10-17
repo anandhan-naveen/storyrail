@@ -230,8 +230,7 @@ svg.wires{position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-eve
 (function(){
 const STEPS=["Requirements","Build","Isolated tests","Review + local scan","Fix","CI/CD → QA","QA environment","Sign-off"];
 const AGENTS=[
- {id:"req-writer",name:"Analyst",role:"Writes the user story in GitHub. A person, not an agent",col:1,row:3,icon:"user",kind:"human",human:true},
- {id:"req-fetch",name:"Requirement fetch",role:"Agent: reads the issue number you give it, checks the ACs, shares the API contract",col:1,row:4,icon:"doc",kind:"intake",deps:["req-writer"]},
+ {id:"req-fetch",name:"Requirement fetch",role:"Agent: fetches the issue you name (user story or bug), checks the ACs, shares the API contract",col:1,row:"span",icon:"doc",kind:"intake"},
  {id:"fe-dev",name:"Frontend dev",role:"React + unit tests",col:2,row:3,icon:"code",kind:"dev",deps:["req-fetch"]},
  {id:"be-dev",name:"Backend dev",role:"Spring Boot + unit tests",col:2,row:4,icon:"code",kind:"dev",deps:["req-fetch"]},
  {id:"ui-tests",name:"Isolated UI automation",role:"Playwright on localhost, mocked API",col:3,row:3,icon:"eye",kind:"test",deps:["fe-dev"]},

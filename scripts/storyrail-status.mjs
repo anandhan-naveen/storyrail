@@ -7,14 +7,14 @@
 //   node scripts/storyrail-status.mjs set <station> <status> [progress] [note...]
 //   node scripts/storyrail-status.mjs log <station> <ok|warn|bad|info> <message...>
 //   node scripts/storyrail-status.mjs run <key> <value...>             e.g. run phase "Build"
-//   node scripts/storyrail-status.mjs loop <bug issues>                 defect loop inside a story run: resets build→QA stations, keeps the run
+//   node scripts/storyrail-status.mjs loop <bug issues>                 defect loop inside a story run: resets fetch→QA stations, keeps the run
 //   node scripts/storyrail-status.mjs metric <unit-fe|unit-be|api|ui> <passed> <total>
 //   node scripts/storyrail-status.mjs findings <blocker> <major> <minor> <fixed>
 //   node scripts/storyrail-status.mjs security <high-critical vulns> <lint warnings>
 //   node scripts/storyrail-status.mjs end
 //   node scripts/storyrail-status.mjs show
 //
-// Stations: req-writer req-fetch fe-dev be-dev ui-tests api-tests reviewer gate fixer cicd smoke manual-tests signoff
+// Stations: req-fetch fe-dev be-dev ui-tests api-tests reviewer gate fixer cicd smoke manual-tests signoff
 // Statuses: pending running done failed skipped waiting
 
 import { mkdirSync, readFileSync, writeFileSync, renameSync, openSync, closeSync, unlinkSync, statSync } from 'node:fs';
@@ -26,7 +26,7 @@ const DIR = join(ROOT, '.storyrail');
 const FILE = join(DIR, 'status.json');
 const LOCK = join(DIR, 'status.lock');
 
-const STATIONS = ['req-writer', 'req-fetch', 'fe-dev', 'be-dev', 'ui-tests', 'api-tests', 'reviewer', 'gate', 'fixer', 'cicd', 'smoke', 'manual-tests', 'signoff'];
+const STATIONS = ['req-fetch', 'fe-dev', 'be-dev', 'ui-tests', 'api-tests', 'reviewer', 'gate', 'fixer', 'cicd', 'smoke', 'manual-tests', 'signoff'];
 const STATUSES = ['pending', 'running', 'done', 'failed', 'skipped', 'waiting'];
 const LEVELS = ['ok', 'warn', 'bad', 'info'];
 const MAX_FEED = 200;
@@ -112,8 +112,7 @@ switch (cmd) {
     if (!bugs) fail('loop needs the bug issue numbers, e.g. loop "50,51"');
     withLock(() => {
       const s = load();
-      for (const st of STATIONS.slice(STATIONS.indexOf('fe-dev'))) s.agents[st] = { status: 'pending', progress: 0, note: '' };
-      s.agents['req-fetch'] = { status: 'skipped', progress: 0, note: 'bug ticket is the requirement' };
+      for (const st of STATIONS) s.agents[st] = { status: 'pending', progress: 0, note: '' };
       s.run.bugs = bugs.split(',').map((n) => n.trim()).filter(Boolean);
       s.run.phase = 'Defect loop';
       delete s.run.endedAt;

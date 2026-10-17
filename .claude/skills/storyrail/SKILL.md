@@ -23,7 +23,7 @@ Stage definitions and gates: [docs/storyrail/PIPELINE.md](../../../docs/storyrai
 - `N` = the first issue number; the run folder is `runs/issue-N/`. Create it.
 - **Shell:** your Bash working directory persists between calls. Always run from the repo root and use subshells for other folders, e.g. `(cd frontend && npm run lint)`. Never leave a `cd` behind.
 - **Long waits** (CI, deploys) must not block a single Bash call for more than a few minutes: poll every ~60 s with short commands (see B.6), or run the wait in the background.
-- Status: always through `node scripts/storyrail-status.mjs …`. You own the stations `req-writer`, `cicd`, `smoke`, `signoff`, and the run fields (`run phase …`, `run summary …`). Agents own their stations.
+- Status: always through `node scripts/storyrail-status.mjs …`. You own the stations `cicd`, `smoke`, `signoff`, and the run fields (`run phase …`, `run summary …`). Agents own their stations.
 - **Parallel stages**: launch both subagents **in the same message** so they run at the same time.
 - Give each subagent everything it needs in its prompt: `N`, the run folder, round number `k`, the QA URL and expected bundle, and the earlier agent's reply when it matters (e.g. new test ids for UI automation).
 - After each stage, read the agent's reply and check its gate yourself (run the command if in doubt). A stage that misses its gate is **not done**: send it back once with the exact failure; if it fails again, stop and ask the user.
@@ -38,12 +38,11 @@ Stage definitions and gates: [docs/storyrail/PIPELINE.md](../../../docs/storyrai
 2. Start the dashboard if it isn't running: `node scripts/storyrail-dashboard.mjs` **in the background** (it exits by itself if already running). Tell the user to open http://localhost:4800.
 3. Read the issue: `gh issue view <n> --json number,title,author,url`. Title for display = the issue title without a leading `[Story] ` / `[Bug] ` tag.
 4. `node scripts/storyrail-status.mjs start "<issues comma-separated>" "<title>"`, then `run repo <owner/repo>` (from `gh repo view --json nameWithOwner -q .nameWithOwner`).
-5. `set req-writer done 100 "issue #N by <author.login>"` (the analyst who wrote the story; StoryRail never writes requirements).
-6. Branch: `git switch -c story/N-<slug>` where slug = title lower-cased, only `[a-z0-9-]`, max 40 chars.
+5. Branch: `git switch -c story/N-<slug>` where slug = title lower-cased, only `[a-z0-9-]`, max 40 chars.
 
 ## B. The rail
 
-**1. Requirements.** `run phase Requirements`. Run **sr-req-fetch**.
+**1. Requirements.** `run phase Requirements`. Run **sr-req-fetch** (mode `story`). Every run, story or bug, starts here; StoryRail never writes requirements.
 Gate: `runs/issue-N/spec.md` exists. If it lists **Open questions** → **ASK** the user, post their answers on the issue (`gh issue comment <n> --body …`), re-run sr-req-fetch. Commit.
 
 **2. Build.** `run phase Build`. Read `## Lanes`. Run **sr-fe-dev** and **sr-be-dev** in parallel (only the lanes needed; mark an unneeded lane and its test station `skipped 0 "not in this story"`).
@@ -92,8 +91,8 @@ Shorter rail; only what the bug touches.
 
 1. Run **A.1** (prerequisites). Then:
    - Started standalone (`/storyrail fix …`): `start "<bugs>" "Defect loop: <title>"`, `run repo …`, B = first bug number, run folder `runs/issue-B/`.
-   - Started from triage: **don't** call `start` (it would wipe the story). Use `loop <bugs>` (resets only the build-to-QA stations, keeps the run), run folder stays `runs/issue-N/` with a `bugs-<B>/` subfolder.
-   - Write the bug spec yourself from `gh issue view <bug>`: `spec.md` with Issues, Lanes, the bug's steps/expected as ACs (`BUG-<n>`), and "Found in QA for #N". `set req-fetch skipped 0 "bug ticket is the requirement"`.
+   - Started from triage: **don't** call `start` (it would wipe the story). Use `loop <bugs>` (resets the stations from requirement fetch to QA, keeps the run's issues and metrics), run folder stays `runs/issue-N/` with a `bugs-<B>/` subfolder.
+   - `run phase Requirements`. Run **sr-req-fetch** in mode `bug` with the bug issue(s), the run folder and (from triage) the story number N. It writes the bug spec with ACs `BUG-<n>`. Open questions → **ASK**, as in B.1.
    - Branch `fix/<B>-<slug>`.
 2. Run only the affected lane's dev with the bug spec; skip the other lane and its tests.
 3. That lane's test agent adds a **regression test that fails on the old code** (tag `@BUG-<n>`).

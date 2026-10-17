@@ -1,12 +1,11 @@
 # StoryRail pipeline: order of agents and gates
 
 Requirements are written by a **person, the analyst**, as GitHub issues. StoryRail never writes requirements.
-A run starts when you give it an issue number (`/storyrail 46`); the requirement fetch agent reads that issue and works from it. Nothing reaches the QA environment until the review and the local quality scan are clean. CI/CD then re-runs the same scan on the server (SonarQube quality gate) as the enforcing check: the local scan finds problems early, and the server gate makes sure nothing slips through.
+Every run starts at **requirement fetch**: you give it an issue number (`/storyrail 46` for a story, `/storyrail fix 50` for a bug) and the agent reads that issue and works from it. Writing the issue happens before StoryRail, so it isn't a stage on the dashboard. Nothing reaches the QA environment until the review and the local quality scan are clean. CI/CD then re-runs the same scan on the server (SonarQube quality gate) as the enforcing check: the local scan finds problems early, and the server gate makes sure nothing slips through.
 
 | # | Stage | Agent / step | Runs against | Gate to the next stage |
 |---|---|---|---|---|
-| 0 | Input | **Analyst** (a person) writes the user story as a GitHub issue | – | Issue has acceptance criteria |
-| 1 | Intake | **Requirement fetch** (`sr-req-fetch`, an agent): reads the issue number you gave, checks the ACs are testable, shares the API contract | GitHub issues | Contract agreed |
+| 1 | Requirements | **Requirement fetch** (`sr-req-fetch`, an agent): fetches the issue number you gave (user story or bug), checks the ACs are testable, shares the API contract | GitHub issues | ACs testable, contract agreed |
 | 2 | Build | **Frontend dev** (`sr-fe-dev`) ∥ **Backend dev** (`sr-be-dev`), each with unit tests; only the lanes the story needs | local | Unit tests + coverage green |
 | 3 | Isolated tests | **Isolated UI automation** (`sr-ui-tests`, after FE dev) ∥ **API automation** (`sr-api-tests`, after BE dev) | localhost: built app with mocked API / local jar | All AC-tagged tests green |
 | 4 | Review + local scan | **Strict reviewer** (`sr-reviewer`, read-only) ∥ **Local quality scan** (`sr-scan`) (Sonar rules via SonarQube for IDE / sonar-scanner in connected mode, SAST, secrets, dependency audit) | local workspace | Both reports collected |
@@ -20,13 +19,13 @@ A run starts when you give it an issue number (`/storyrail 46`); the requirement
 - **CI/CD vs deploy.** CI/CD is the whole automated pipeline (build, test, scan, package, deploy). Deploy is its last step. Writing the pipeline files is one-time setup, not a per-story stage.
 - **Smoke vs manual QA.** Smoke: a few automated checks right after a deploy (site up, app loads, health endpoint). It answers "is this build alive?" Manual QA: deeper, exploratory testing of the acceptance criteria and UX on the QA environment. It only starts once smoke passes.
 - **Isolated UI automation.** Playwright against a local build with a mocked API, so failures point at the frontend alone.
-- **Human gates.** The analyst writes the story; you pick the issue number, answer open questions, you approve the merge to QA, you triage QA defects, and you sign off. Everything between is the agents' job.
+- **Human gates.** You pick the issue number, answer open questions, you approve the merge to QA, you triage QA defects, and you sign off. Everything between is the agents' job.
 
 ## Defect loop (`/storyrail fix <bug issues>`)
 
 For bugs found in QA. Shorter than the story rail: only the affected lane runs.
 
-1. Bug ticket is the requirement (no requirement fetch).
+1. **Requirement fetch** reads the bug issue and turns its expected behaviour into ACs (`BUG-<n>`).
 2. Dev of the affected lane fixes it.
 3. That lane's test agent adds a **regression test that fails on the old code**.
 4. Review + local scan on the **diff only**; fixer if needed (max 2 rounds).
