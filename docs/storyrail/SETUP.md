@@ -63,8 +63,8 @@ Log in with your Claude account when the browser opens, and trust the folder whe
 
 ## 2. Each story
 
-1. **Write the story** as a GitHub issue with the *User story* template: the story, numbered acceptance criteria, and tick **Frontend** and/or **Backend**.
-2. In the `storyrail` folder, start Claude Code (`claude`) and type:
+1. **Your analyst writes the story** as a GitHub issue with the *User story* template: the story, numbered acceptance criteria, and tick **Frontend** and/or **Backend**. StoryRail never writes or changes requirements.
+2. When you decide that issue should be built, start Claude Code in the `storyrail` folder (`claude`) and give it the issue number:
 
    ```
    /storyrail 46

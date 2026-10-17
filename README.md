@@ -11,7 +11,7 @@ availability of books).
 
 | # | Stage | Who |
 |---|---|---|
-| 1 | Requirements | **Requirement writer** (you, the product owner) → **Requirement fetch** agent |
+| 1 | Requirements | **Analyst** (a person) writes the GitHub issue → you run `/storyrail <issue>` → **Requirement fetch** agent reads it |
 | 2 | Build | **Frontend dev** ∥ **Backend dev**, each with unit tests |
 | 3 | Isolated tests | **Isolated UI automation** (after FE) ∥ **API automation** (after BE) |
 | 4 | Review + local scan | **Strict reviewer** (read-only) ∥ **Local quality scan** (Sonar rules, SAST, secrets, dependencies) |

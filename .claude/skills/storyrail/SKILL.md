@@ -38,7 +38,7 @@ Stage definitions and gates: [docs/storyrail/PIPELINE.md](../../../docs/storyrai
 2. Start the dashboard if it isn't running: `node scripts/storyrail-dashboard.mjs` **in the background** (it exits by itself if already running). Tell the user to open http://localhost:4800.
 3. Read the issue: `gh issue view <n> --json number,title,author,url`. Title for display = the issue title without a leading `[Story] ` / `[Bug] ` tag.
 4. `node scripts/storyrail-status.mjs start "<issues comma-separated>" "<title>"`, then `run repo <owner/repo>` (from `gh repo view --json nameWithOwner -q .nameWithOwner`).
-5. `set req-writer done 100 "issue #N by <author.login>"`.
+5. `set req-writer done 100 "issue #N by <author.login>"` (the analyst who wrote the story; StoryRail never writes requirements).
 6. Branch: `git switch -c story/N-<slug>` where slug = title lower-cased, only `[a-z0-9-]`, max 40 chars.
 
 ## B. The rail
