@@ -23,7 +23,60 @@ availability of books).
 Defects found in QA go through a shorter **defect loop** (bug ticket → fix in the affected lane only → regression
 test → diff review + scan → CI/CD → smoke → targeted re-test). Full definitions: [docs/storyrail/PIPELINE.md](docs/storyrail/PIPELINE.md).
 
-**Run it:** create an issue, then in Claude Code type `/storyrail <issue number>`. Setup: [docs/storyrail/SETUP.md](docs/storyrail/SETUP.md).
+## How to run it
+
+One-time setup on your Mac: [docs/storyrail/SETUP.md](docs/storyrail/SETUP.md). Run **one story or bug at a time**:
+the dashboard and your working folder follow a single run.
+
+**Before each run**
+
+```bash
+cd storyrail
+git switch main && git pull
+claude
+```
+
+Open **http://localhost:4800** on a second screen. It comes alive as soon as the run starts.
+
+### A. A new user story
+
+1. **The analyst creates the issue** with the **User story** template: the story ("As a … I want … so that …"),
+   numbered acceptance criteria (`AC1`, `AC2`, …) and the **Frontend** / **Backend** ticks. Note the number, e.g. **#51**.
+2. **Start the run** in Claude Code: `/storyrail 51` (stories that belong together: `/storyrail 51 52`).
+3. **Answer when it stops.** It only pauses here:
+
+   | When | It asks | You answer |
+   |---|---|---|
+   | Requirement fetch | Questions about unclear acceptance criteria (only if any) | Your answers; it posts them on the issue |
+   | Before merge | "PR #X is green. Merge and deploy to QA?" | **yes** |
+   | After manual QA | Which defects to fix now (only if QA found any) | e.g. "fix all majors, rest to backlog" |
+   | Sign-off | "Approve?" | **approve** |
+
+4. **Result:** the code is merged and deployed to the [QA site](https://anandhan-naveen.github.io/storyrail/), the issue
+   gets a summary comment and is closed, and the reports are saved in `runs/issue-51/`.
+
+Defects that manual QA finds *during* a story run are handled inside that run: StoryRail creates the bug issues and
+fixes them before sign-off. You don't need part B for those.
+
+### B. A new bug (found outside a story run)
+
+1. **The analyst creates the issue** with the **Bug** template: steps to reproduce, expected, actual (with a screenshot
+   if possible), lane and severity. Note the number, e.g. **#52**.
+2. **Start the defect loop:** `/storyrail fix 52` (several bugs: `/storyrail fix 52 53`).
+3. **Answer when it stops:** questions about the bug (only if steps or expected are missing), and
+   "PR #X is green. Merge and deploy to QA?" → **yes**.
+4. **Result:** the fix ships with a regression test, the PR closes the bug, and manual QA re-tests it on the QA site and
+   comments **"Verified on QA"**. If it isn't fixed, the issue is reopened and you are asked what to do.
+
+### Handy anytime
+
+| Want to… | Type |
+|---|---|
+| See where a run is | `/storyrail status` |
+| Resume after you fixed or answered something | `continue` |
+| Keep your Mac awake during a run | `caffeinate -i` in another terminal |
+
+## What's in the repo
 
 | Part | Stack | Docs |
 |---|---|---|

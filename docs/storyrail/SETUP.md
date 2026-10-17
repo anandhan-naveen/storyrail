@@ -77,7 +77,7 @@ Log in with your Claude account when the browser opens, and trust the folder whe
    - **"PR #X is green. Merge and deploy to QA?"**,
    - which QA defects to fix now,
    - **sign-off**.
-5. Bugs from QA later on: `/storyrail fix 50 51`. This also starts at requirement fetch, which reads the bug issues.
+5. Bugs found later: the analyst uses the **Bug** template (steps, expected, actual), then `/storyrail fix 50 51`. This also starts at requirement fetch, which reads the bug issues.
 6. Where is a run? `/storyrail status`.
 
 Everything a run produces (spec, review and scan reports, QA log and screenshots) is committed under `runs/issue-<N>/`.
