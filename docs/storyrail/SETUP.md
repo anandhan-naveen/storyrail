@@ -1,7 +1,17 @@
-# Run StoryRail on your laptop (macOS)
+# Run StoryRail with IBM Bob (macOS)
 
-StoryRail runs inside **Claude Code** on your machine, using your Claude Pro/Max subscription. No API key is needed.
-You start each run yourself with `/storyrail <issue number>`.
+StoryRail runs inside **IBM Bob**. Each agent is a Bob **custom mode** that ships with this repo, and you start each run
+yourself with `/storyrail <issue number>` in the Bob chat.
+
+## What's in `.bob/`
+
+| File | What it does |
+|---|---|
+| `.bob/custom_modes.yaml` | The 10 StoryRail modes (orchestrator + 9 agents). Each mode may only **edit** its own folders (`fileRegex`), so "stay in your lane" is enforced, not just asked. The reviewer has no edit rights at all. |
+| `.bob/rules/01-project-guide.md` | Project conventions, loaded in every mode. |
+| `.bob/rules-<mode>/01-brief.md` | The full brief of one mode (what to do, gates, what to report). |
+| `.bob/commands/storyrail.md` | The `/storyrail` command: switches to the orchestrator mode and passes your arguments. |
+| `.bobignore` | Files Bob must never read (`.env`, keys). |
 
 ## 1. One-time setup
 
@@ -28,16 +38,6 @@ git config --global user.name "Your Name"
 git config --global user.email "you@example.com"
 ```
 
-### Claude Code
-
-```bash
-curl -fsSL https://claude.ai/install.sh | bash     # Anthropic's native installer (auto-updates)
-claude --version
-```
-
-Make sure `ANTHROPIC_API_KEY` is **not** set in your shell (`echo $ANTHROPIC_API_KEY` prints nothing). If it is set,
-Claude Code bills that key instead of using your subscription.
-
 ### GitHub CLI login
 
 ```bash
@@ -49,55 +49,81 @@ gh auth login        # GitHub.com → HTTPS → log in with a browser
 ```bash
 git clone https://github.com/anandhan-naveen/storyrail.git
 cd storyrail
+git switch bob
 (cd frontend && npm ci) && (cd tests/ui && npm ci && npx playwright install chromium) && (cd tests/api && npm ci)
 ```
 
-### First start
+### IBM Bob
 
-```bash
-claude
-```
+1. Install and sign in to IBM Bob (IDE) the way your organisation provides it.
+2. **File → Open Folder… →** the `storyrail` folder (the repo root, not a subfolder).
+3. Open the mode selector in the chat. You should see the ten **StoryRail · …** modes. If not, open
+   Settings → Modes → *Edit Project Modes*: it should show `.bob/custom_modes.yaml`. A YAML error there hides all of them.
+4. Type `/` in the chat: **`/storyrail`** should be in the list.
 
-Log in with your Claude account when the browser opens, and trust the folder when asked. Claude Code reads
-`CLAUDE.md`, the agents in `.claude/agents/` and the `/storyrail` command automatically.
+### Permissions (Permissions button, next to the mode selector)
+
+StoryRail runs many small steps, so approve the routine ones and keep the risky ones manual:
+
+| Action | Setting | Why |
+|---|---|---|
+| Read | auto-approve | Reading code and specs |
+| Edit | auto-approve | Each mode can only edit its own folders anyway |
+| Todo | auto-approve | Progress list |
+| Subtask | auto-approve | The orchestrator hands each stage to its mode |
+| Mode | auto-approve | `/storyrail` switches to the orchestrator mode |
+| Subagent | ask (optional auto) | Only used to run reviewer ∥ scan at the same time |
+| Execute | **ask** at first | Look at what it runs during your first story; auto-approve once you trust it |
+
+Whatever you allow, the orchestrator still **stops and asks you** before merging, at sign-off and when requirements are
+unclear. Never approve `git push --force`, `git reset --hard` or anything that deletes outside the repo.
 
 ## 2. Each story
 
-1. **Your analyst writes the story** as a GitHub issue with the *User story* template: the story, numbered acceptance criteria, and tick **Frontend** and/or **Backend**. StoryRail never writes or changes requirements.
-2. When you decide that issue should be built, start Claude Code in the `storyrail` folder (`claude`) and give it the issue number:
+Run **one story or bug at a time**: the dashboard and your working folder follow a single run.
+
+1. **Your analyst writes the story** as a GitHub issue with the *User story* template: the story, numbered acceptance
+   criteria, and tick **Frontend** and/or **Backend**. StoryRail never writes or changes requirements.
+2. Start the dashboard in a terminal and leave it open: `node scripts/storyrail-dashboard.mjs`, then open
+   **http://localhost:4800**. Keep it on a second screen during a demo.
+3. In Bob's chat, give it the issue number:
 
    ```
    /storyrail 46
    ```
 
    Several issues that belong together: `/storyrail 46 47`.
-3. Open the dashboard it prints: **http://localhost:4800**. Keep it on a second screen during a demo.
 4. Answer when it stops at a gate:
    - questions about unclear acceptance criteria,
    - **"PR #X is green. Merge and deploy to QA?"**,
    - which QA defects to fix now,
    - **sign-off**.
-5. Bugs found later: the analyst uses the **Bug** template (steps, expected, actual), then `/storyrail fix 50 51`. This also starts at requirement fetch, which reads the bug issues.
+5. Bugs found later: the analyst uses the **Bug** template (steps, expected, actual), then `/storyrail fix 50 51`.
 6. Where is a run? `/storyrail status`.
 
 Everything a run produces (spec, review and scan reports, QA log and screenshots) is committed under `runs/issue-<N>/`.
 
 ## Good to know
 
-- **Usage limits.** A full story runs about ten agents and uses a lot of your plan's limit; on Pro a run may pause
-  until the limit resets. Small, focused stories go much further than big ones.
-- **Permissions.** `.claude/settings.json` pre-approves the routine commands (tests, lint, status updates).
-  Claude Code still asks before anything else, such as pushing or merging.
+- **One stage at a time.** Each stage runs as a Bob subtask in its own mode, so stages that could run side by side
+  (frontend ∥ backend, reviewer ∥ scan) run one after the other. That is slower, but every mode keeps its edit limits.
+- **Subtasks are visible.** Each stage opens its own conversation in Bob. You can watch it, but let it finish: the
+  orchestrator continues when the subtask completes.
+- **Cost.** A full story runs about ten modes. Small, focused stories go much further than big ones.
 - **Your computer must stay awake** during a run (System Settings → Battery/Lock Screen, or run `caffeinate -i` in another terminal).
 - **The dashboard** is local only (`127.0.0.1:4800`); it reads `.storyrail/status.json`, which is not committed.
+- **Corporate network.** npm, Maven and Playwright's browser download must reach your internal registry or proxy
+  (e.g. `npm config set registry …`, Maven `settings.xml` mirror, `PLAYWRIGHT_DOWNLOAD_HOST`).
 
 ## Troubleshooting
 
 | Symptom | Fix |
 |---|---|
-| `/storyrail` not found | Start `claude` from the repo root, not a subfolder. |
+| `/storyrail` not in the `/` list | Open the repo root as the folder in Bob; check `.bob/commands/storyrail.md` exists (`git switch bob`). |
+| StoryRail modes missing | Settings → Modes → *Edit Project Modes*; fix the YAML error it shows, then reload the window. |
+| "Edit not allowed" in a mode | Working as intended: that file is outside the mode's lane. The orchestrator sends it to the right mode. |
 | `gh: not logged in` | `gh auth login` |
 | Backend steps say "Maven missing" | `brew install maven` and `brew install --cask temurin@21`, then open a new terminal. |
-| Playwright "browser not installed" | `cd tests/ui && npx playwright install chromium` |
+| Playwright "browser not installed" | `(cd tests/ui && npx playwright install chromium)` |
 | Dashboard shows "dashboard server stopped" | `node scripts/storyrail-dashboard.mjs` in a separate terminal. |
 | A stage fails twice | The orchestrator stops and tells you why. Fix or answer, then say "continue". |

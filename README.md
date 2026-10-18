@@ -33,16 +33,17 @@ the dashboard and your working folder follow a single run.
 ```bash
 cd storyrail
 git switch main && git pull
-claude
+node scripts/storyrail-dashboard.mjs     # leave this terminal open
 ```
 
-Open **http://localhost:4800** on a second screen. It comes alive as soon as the run starts.
+Open the `storyrail` folder in **IBM Bob**, and open **http://localhost:4800** on a second screen. The dashboard comes
+alive as soon as the run starts.
 
 ### A. A new user story
 
 1. **The analyst creates the issue** with the **User story** template: the story ("As a … I want … so that …"),
    numbered acceptance criteria (`AC1`, `AC2`, …) and the **Frontend** / **Backend** ticks. Note the number, e.g. **#51**.
-2. **Start the run** in Claude Code: `/storyrail 51` (stories that belong together: `/storyrail 51 52`).
+2. **Start the run** in the Bob chat: `/storyrail 51` (stories that belong together: `/storyrail 51 52`).
 3. **Answer when it stops.** It only pauses here:
 
    | When | It asks | You answer |
@@ -89,8 +90,7 @@ fixes them before sign-off. You don't need part B for those.
 
 - **Issues (user stories + acceptance criteria):** [01 frontend](issues/01-frontend-library-catalog.md) ·
   [02 backend](issues/02-backend-books-api.md)
-- **Agents:** [.claude/agents/](.claude/agents/) · orchestrator [.claude/skills/storyrail/SKILL.md](.claude/skills/storyrail/SKILL.md) · conventions [CLAUDE.md](CLAUDE.md)
-- **First run (hand-orchestrated) archive:** [docs/history/run-1/](docs/history/run-1/)
+- **Agents (IBM Bob custom modes):** [.bob/custom_modes.yaml](.bob/custom_modes.yaml) · briefs `.bob/rules-sr-*/` · orchestrator [.bob/rules-sr-orchestrator/](.bob/rules-sr-orchestrator/01-orchestrator.md) · `/storyrail` command [.bob/commands/storyrail.md](.bob/commands/storyrail.md) · conventions [.bob/rules/01-project-guide.md](.bob/rules/01-project-guide.md)
 - **Test traceability (AC → tests):** [UI](tests/ui/README.md#ac--test-traceability) ·
   [API](tests/api/README.md#traceability) · [manual](tests/manual/test-cases.md)
 - **Deployment:** [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)

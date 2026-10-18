@@ -12,4 +12,4 @@ Each `/storyrail` run writes its records to `runs/issue-<N>/` (N = the first iss
 | `qa-charter.md`, `qa-cases.md`, `qa-log.md`, `evidence/` | manual QA on the QA environment |
 | `qa-retest.md` | manual QA re-test in a defect loop |
 
-The first run (Library Catalog, issues #1 and #2) predates this layout; its records are in `docs/history/run-1/` and `tests/manual/`.
+The first run (Library Catalog, issues #1 and #2) predates this layout; its manual QA records are in `tests/manual/`.

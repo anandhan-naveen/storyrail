@@ -1,0 +1,5 @@
+# Files Bob must never read or send to the model.
+.env
+.env.*
+**/*.pem
+**/*.key

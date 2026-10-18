@@ -16,6 +16,7 @@ Every run starts at **requirement fetch**: you give it an issue number (`/storyr
 
 ## Terms
 
+- **∥ (side by side).** The two stages don't depend on each other. In IBM Bob each stage runs as a subtask in its own mode, one after the other (frontend before backend, reviewer before scan); the dashboard still shows them side by side.
 - **CI/CD vs deploy.** CI/CD is the whole automated pipeline (build, test, scan, package, deploy). Deploy is its last step. Writing the pipeline files is one-time setup, not a per-story stage.
 - **Smoke vs manual QA.** Smoke: a few automated checks right after a deploy (site up, app loads, health endpoint). It answers "is this build alive?" Manual QA: deeper, exploratory testing of the acceptance criteria and UX on the QA environment. It only starts once smoke passes.
 - **Isolated UI automation.** Playwright against a local build with a mocked API, so failures point at the frontend alone.
@@ -39,9 +40,11 @@ the requirement itself was wrong is a requirement change and goes back through t
 
 | What | Where |
 |---|---|
-| Orchestrator (`/storyrail`) | `.claude/skills/storyrail/SKILL.md` |
-| Agents | `.claude/agents/sr-*.md` |
-| Project conventions every agent follows | `CLAUDE.md` |
+| `/storyrail` command | `.bob/commands/storyrail.md` |
+| Orchestrator brief | `.bob/rules-sr-orchestrator/01-orchestrator.md` |
+| Agents (IBM Bob custom modes, with edit limits) | `.bob/custom_modes.yaml` |
+| Each agent's brief | `.bob/rules-sr-*/01-brief.md` |
+| Project conventions every mode follows | `.bob/rules/01-project-guide.md` |
 | Output of one run | `runs/issue-<N>/` |
 | Live dashboard | `node scripts/storyrail-dashboard.mjs` → http://localhost:4800 |
 | Setup on a new machine | [SETUP.md](SETUP.md) |
