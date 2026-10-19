@@ -267,7 +267,7 @@ const div=(cls,css)=>{const d=document.createElement("div"); d.className=cls; Ob
 STEPS.forEach((t,i)=>{ const s=add(div("step",{gridColumn:String(i+1)})); s.innerHTML='<span class="n"></span><span class="t"></span>'; s.firstChild.textContent=String(i+1); s.lastChild.textContent=t; });
 (()=>{ const z=add(div("zone local",{gridColumn:"1 / 6",gridRow:"2 / 6"})); z.innerHTML="<span>Local workspace · before push</span>"; })();
 (()=>{ const z=add(div("zone qa",{gridColumn:"7 / 8",gridRow:"2 / 6"})); z.innerHTML="<span>Deployed QA URL</span>"; })();
-[["fe","Frontend lane",3],["be","Backend lane",4]].forEach(([c,t,r])=>{ const l=add(div("lane "+c,{gridColumn:"2 / 4",gridRow:String(r)})); l.innerHTML="<span></span>"; l.firstChild.textContent=t; });
+[["fe","Frontend lane · library-frontend",3],["be","Backend lane · library-backend",4]].forEach(([c,t,r])=>{ const l=add(div("lane "+c,{gridColumn:"2 / 4",gridRow:String(r)})); l.innerHTML="<span></span>"; l.firstChild.textContent=t; });
 AGENTS.forEach(a=>{
   const el=document.createElement("article"); el.className="box pending"+(a.human?" human":""); el.id="st-"+a.id;
   el.style.setProperty("--f","var(--c-"+a.kind+"-f)"); el.style.setProperty("--s","var(--c-"+a.kind+"-s)");

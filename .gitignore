@@ -1,9 +1,4 @@
 node_modules/
-dist/
-coverage/
-target/
-playwright-report/
-test-results/
 .env
 .env.local
 *.log
@@ -12,3 +7,6 @@ test-results/
 
 # StoryRail local run state
 .storyrail/
+
+# Project repos StoryRail works on (cloned by scripts/storyrail-workspace.mjs)
+projects/

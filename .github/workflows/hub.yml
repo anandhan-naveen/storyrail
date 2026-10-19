@@ -1,0 +1,41 @@
+name: Hub checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  scripts:
+    name: Scripts and config
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "22"
+
+      - name: Syntax check and config
+        run: |
+          for f in scripts/*.mjs; do node --check "$f"; done
+          node -e "JSON.parse(require('fs').readFileSync('storyrail.config.json','utf8'))"
+          node scripts/storyrail-workspace.mjs config > /dev/null
+
+      - name: Status script round trip
+        run: |
+          node scripts/storyrail-status.mjs start 1 "CI check"
+          node scripts/storyrail-status.mjs set req-fetch "done" 100 "ok"
+          node scripts/storyrail-status.mjs loop 2
+          node scripts/storyrail-status.mjs show | grep -q '"phase": "Defect loop"'
