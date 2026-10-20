@@ -99,7 +99,7 @@ function briefPath(member) {
 
 function memberFeed(member, st) {
   const ids = new Set(member.stations);
-  if (member.id === 'alex') ids.add('orchestrator');
+  if (member.kind === 'lead') ids.add('orchestrator');
   return (st.feed ?? []).filter((f) => ids.has(f.agent));
 }
 

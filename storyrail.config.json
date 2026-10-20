@@ -34,8 +34,8 @@
     "$comment": "The squad as shown on the dashboard. Rename people freely; stations are the status ids each member reports on; brief = the agent's file name (sr-*) or 'orchestrator'.",
     "members": [
       {
-        "id": "alex",
-        "name": "Alex",
+        "id": "naveen",
+        "name": "Naveen",
         "role": "Squad lead",
         "kind": "lead",
         "stations": [],
@@ -43,8 +43,8 @@
         "about": "Runs the rail: hands each stage to the right person, checks every gate and asks you when a decision is yours."
       },
       {
-        "id": "priya",
-        "name": "Priya",
+        "id": "sindhu",
+        "name": "Sindhu",
         "role": "Business analyst",
         "kind": "intake",
         "stations": [
@@ -54,8 +54,8 @@
         "about": "Reads the backlog issue, makes every acceptance criterion testable and agrees the API contract."
       },
       {
-        "id": "maya",
-        "name": "Maya",
+        "id": "varunesh",
+        "name": "Varunesh",
         "role": "Frontend developer",
         "kind": "dev",
         "stations": [
@@ -65,8 +65,8 @@
         "about": "Builds the React screens with unit tests in library-frontend."
       },
       {
-        "id": "arjun",
-        "name": "Arjun",
+        "id": "meysam",
+        "name": "Meysam",
         "role": "Backend developer",
         "kind": "dev",
         "stations": [
@@ -76,8 +76,8 @@
         "about": "Builds the Spring Boot API with unit tests in library-backend."
       },
       {
-        "id": "sofia",
-        "name": "Sofia",
+        "id": "antonello",
+        "name": "Antonello",
         "role": "UI test engineer",
         "kind": "test",
         "stations": [
@@ -87,8 +87,8 @@
         "about": "Automates the screens with Playwright against a local build with a mocked API."
       },
       {
-        "id": "kenji",
-        "name": "Kenji",
+        "id": "jagan",
+        "name": "Jagan",
         "role": "API test engineer",
         "kind": "test",
         "stations": [
@@ -98,8 +98,8 @@
         "about": "Writes the Cucumber + Java acceptance scenarios for the API in library-api-tests."
       },
       {
-        "id": "lena",
-        "name": "Lena",
+        "id": "priya",
+        "name": "Priya",
         "role": "Tech lead, strict reviewer",
         "kind": "review",
         "stations": [
@@ -109,8 +109,8 @@
         "about": "Reviews every change against the acceptance criteria, the contract and the conventions. Read-only."
       },
       {
-        "id": "omar",
-        "name": "Omar",
+        "id": "subramanian",
+        "name": "Subramanian",
         "role": "Quality engineer",
         "kind": "scan",
         "stations": [
@@ -120,8 +120,8 @@
         "about": "Runs lint, Sonar-class rules, SAST, secret and dependency scans before anything is pushed."
       },
       {
-        "id": "jonas",
-        "name": "Jonas",
+        "id": "sandrine",
+        "name": "Sandrine",
         "role": "Developer, review fixes",
         "kind": "fix",
         "stations": [
@@ -131,8 +131,8 @@
         "about": "Fixes every review and scan finding in one pass, with regression tests."
       },
       {
-        "id": "nina",
-        "name": "Nina",
+        "id": "charlotte",
+        "name": "Charlotte",
         "role": "Release engineer",
         "kind": "ship",
         "stations": [
@@ -144,8 +144,8 @@
         "about": "Opens the PRs, watches the pipelines, deploys to QA, and runs the smoke test and the API acceptance run on QA."
       },
       {
-        "id": "tom",
-        "name": "Tom",
+        "id": "harri",
+        "name": "Harri",
         "role": "QA tester",
         "kind": "qa",
         "stations": [
@@ -155,15 +155,15 @@
         "about": "Tests the deployed QA site like a user would and logs defects."
       },
       {
-        "id": "you",
-        "name": "You",
+        "id": "laurence",
+        "name": "Laurence",
         "role": "Product owner",
         "kind": "human",
         "stations": [
           "signoff"
         ],
         "brief": null,
-        "about": "Picks the issue, answers questions, approves the merge and signs off the story."
+        "about": "The product owner: picks the issue, answers the squad's questions, approves the merge to QA and signs off the story."
       }
     ],
     "outputs": {

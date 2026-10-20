@@ -91,8 +91,8 @@ Everything a run produces (spec, review and scan reports, QA log and screenshots
 
 ## The dashboard: squad and chat
 
-The dashboard opens on the **Squad** view: every agent is a squad member with a name and a role (Priya the business
-analyst, Maya and Arjun the developers, Lena the strict reviewer, Nina the release engineer, …). Whoever is working
+The dashboard opens on the **Squad** view: every agent is a squad member with a name and a role (Sindhu the business
+analyst, Varunesh and Meysam the developers, Priya the strict reviewer, Charlotte the release engineer, …). Whoever is working
 right now is shown large at the top; anyone waiting for you is shown there too. The **Flow** tab has the rail diagram.
 
 **Rename the squad** in `storyrail.config.json` → `squad.members` (name, role, a one-line "about"). Restart the
@@ -101,7 +101,7 @@ dashboard server to pick it up.
 ### Ask a squad member
 
 Select a member to see their work as a timeline (status updates, reports they wrote) and ask them about it, e.g.
-"Which acceptance criteria have you covered?" or "Why did you flag R1-03?". They answer in role, from their records.
+"Which acceptance criteria have you covered?" or "Why did you flag R1-03?" (to Priya). They answer in role, from their records.
 
 | `STORYRAIL_ASK` | Who answers | Needs |
 |---|---|---|
