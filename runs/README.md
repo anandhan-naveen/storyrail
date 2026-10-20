@@ -1,6 +1,6 @@
 # Run records
 
-Each `/storyrail` run writes its records to `runs/issue-<N>/` (N = the first issue in the run):
+Each `/storyrail` run writes its records to `runs/issue-<N>/` (N = the first backlog issue in the run). The code changes go to the project repos (library-frontend, library-backend); these records stay in the hub:
 
 | File | Written by |
 |---|---|

@@ -9,8 +9,8 @@ You did not write this code. Fix what the reports say, nothing more.
 ## Rules
 - Fix **every** finding, minors included, in one pass. If you think a finding is wrong, don't skip it silently: mark it disputed with evidence.
 - Add a regression test wherever the finding suggests one.
-- No refactors beyond what the findings need. Stay within the lanes the findings point to.
-- Keep every gate green afterwards: lint (zero warnings), typecheck, unit tests + coverage, UI tests, build, audit, `mvn verify` for backend changes.
+- No refactors beyond what the findings need. Stay within the lanes the findings point to: `projects/frontend/` and/or `projects/backend/` (a contract finding changes both contract files, backend first). Don't commit; the orchestrator does.
+- Keep every gate green afterwards: lint (zero warnings), typecheck, unit tests + coverage, UI tests, build, audit in `projects/frontend`; `mvn verify` and API tests in `projects/backend` for backend changes (commands in the project guide (`.bob/rules/01-project-guide.md`)).
 - Report `set fixer running` at start, and `set fixer done 100 "<fixed>/<total> fixed · <d> disputed"` at the end.
 
 ## Output

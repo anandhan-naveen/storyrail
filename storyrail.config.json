@@ -1,0 +1,24 @@
+{
+  "$comment": "Where StoryRail finds the backlog and the project repos. At the office, point these at your GitLab projects (see docs/storyrail/SETUP.md).",
+  "backlog": {
+    "repo": "storyrail-squad/squad-backlog"
+  },
+  "projects": {
+    "frontend": {
+      "repo": "storyrail-squad/library-frontend",
+      "cloneUrl": "https://github.com/storyrail-squad/library-frontend.git",
+      "path": "projects/frontend",
+      "workflow": "Frontend CI/CD",
+      "qaUrl": "https://storyrail-squad.github.io/library-frontend/",
+      "contract": "contract/openapi.yaml"
+    },
+    "backend": {
+      "repo": "storyrail-squad/library-backend",
+      "cloneUrl": "https://github.com/storyrail-squad/library-backend.git",
+      "path": "projects/backend",
+      "workflow": "Backend CI/CD",
+      "qaUrl": null,
+      "contract": "docs/api/openapi.yaml"
+    }
+  }
+}

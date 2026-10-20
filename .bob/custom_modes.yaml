@@ -5,7 +5,7 @@ customModes:
   - slug: sr-orchestrator
     name: "StoryRail · Orchestrator"
     description: "Runs a StoryRail story or defect loop from start to sign-off."
-    roleDefinition: "You are the StoryRail orchestrator. You take a GitHub issue (user story or bug) through the squad of StoryRail modes to a signed-off release, enforce every gate and keep the live dashboard current. You never write product code or tests yourself."
+    roleDefinition: "You are the StoryRail orchestrator. You take a backlog issue (user story or bug) through the squad of StoryRail modes, across the separate frontend and backend repos, to a signed-off release, enforce every gate and keep the live dashboard current. You never write product code or tests yourself."
     whenToUse: "Started by the /storyrail command with an issue number, `fix <bug issues>` or `status`."
     customInstructions: "Follow your brief in .bob/rules-sr-orchestrator/ exactly. Report progress only through node scripts/storyrail-status.mjs."
     groups:
@@ -20,7 +20,7 @@ customModes:
           description: "Run reports only (runs/)"
   - slug: sr-req-fetch
     name: "StoryRail · Requirement fetch"
-    description: "StoryRail requirement fetch. Reads one or more GitHub issues (user stories or bugs), decides which lanes (frontend/backend) are needed, checks every acceptance criterion is testable, and writes the run spec plus any API contract changes."
+    description: "StoryRail requirement fetch. Reads one or more backlog issues (user stories or bugs), decides which lanes (frontend/backend) are needed, checks every acceptance criterion is testable, and writes the run spec plus any API contract changes."
     roleDefinition: "You are the StoryRail requirement fetch agent. You read the GitHub issue you are given (user story or bug), decide the lanes, make every acceptance criterion testable and write the run spec. You never invent requirements."
     whenToUse: "Use at the start of every /storyrail run and defect loop."
     customInstructions: "Follow your brief in .bob/rules-sr-req-fetch/ exactly. Report progress only through node scripts/storyrail-status.mjs."
@@ -28,8 +28,8 @@ customModes:
       - read
       - execute
       - - edit
-        - fileRegex: "^(runs/.*|docs/api/openapi\\.yaml)$"
-          description: "Run spec and API contract only"
+        - fileRegex: "^(runs/.*|projects/backend/docs/api/openapi\\.yaml|projects/frontend/contract/openapi\\.yaml)$"
+          description: "Run spec and the two contract files only"
   - slug: sr-fe-dev
     name: "StoryRail · Frontend dev"
     description: "StoryRail frontend developer. Implements the frontend part of a run spec in React + TypeScript with unit tests."
@@ -40,8 +40,8 @@ customModes:
       - read
       - execute
       - - edit
-        - fileRegex: "^frontend/.*"
-          description: "Frontend code only"
+        - fileRegex: "^projects/frontend/(?!tests/|contract/).*"
+          description: "library-frontend app code only (not its tests or contract)"
   - slug: sr-be-dev
     name: "StoryRail · Backend dev"
     description: "StoryRail backend developer. Implements the backend part of a run spec in Java 21 / Spring Boot with unit tests."
@@ -52,8 +52,8 @@ customModes:
       - read
       - execute
       - - edit
-        - fileRegex: "^backend/.*"
-          description: "Backend code only"
+        - fileRegex: "^projects/backend/(?!tests/api/|docs/api/).*"
+          description: "library-backend app code only (not its API tests or contract)"
   - slug: sr-ui-tests
     name: "StoryRail · Isolated UI automation"
     description: "StoryRail isolated UI automation. Writes and runs Playwright tests for the frontend acceptance criteria against a local build with a mocked API."
@@ -64,7 +64,7 @@ customModes:
       - read
       - execute
       - - edit
-        - fileRegex: "^(tests/ui/|runs/).*"
+        - fileRegex: "^(projects/frontend/tests/ui/|runs/).*"
           description: "UI tests and findings only"
   - slug: sr-api-tests
     name: "StoryRail · API automation"
@@ -76,7 +76,7 @@ customModes:
       - read
       - execute
       - - edit
-        - fileRegex: "^(tests/api/|runs/).*"
+        - fileRegex: "^(projects/backend/tests/api/|runs/).*"
           description: "API tests and findings only"
   - slug: sr-reviewer
     name: "StoryRail · Strict reviewer"
@@ -109,8 +109,8 @@ customModes:
       - read
       - execute
       - - edit
-        - fileRegex: "^(frontend/|backend/|tests/|runs/).*"
-          description: "Code, tests and fix responses"
+        - fileRegex: "^(projects/|runs/).*"
+          description: "Project code, tests and fix responses"
   - slug: sr-manual-qa
     name: "StoryRail · Manual QA"
     description: "StoryRail manual QA. Exploratory testing of a story on the deployed QA environment (never a local build) after the smoke test passes. Logs defects; does not fix code."

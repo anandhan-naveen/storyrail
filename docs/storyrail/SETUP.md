@@ -7,7 +7,7 @@ yourself with `/storyrail <issue number>` in the Bob chat.
 
 | File | What it does |
 |---|---|
-| `.bob/custom_modes.yaml` | The 10 StoryRail modes (orchestrator + 9 agents). Each mode may only **edit** its own folders (`fileRegex`), so "stay in your lane" is enforced, not just asked. The reviewer has no edit rights at all. |
+| `.bob/custom_modes.yaml` | The 10 StoryRail modes (orchestrator + 9 agents). Each mode may only **edit** its own folders (`fileRegex`), e.g. the frontend dev only `projects/frontend/` app code, so "stay in your lane" is enforced, not just asked. The reviewer has no edit rights at all. |
 | `.bob/rules/01-project-guide.md` | Project conventions, loaded in every mode. |
 | `.bob/rules-<mode>/01-brief.md` | The full brief of one mode (what to do, gates, what to report). |
 | `.bob/commands/storyrail.md` | The `/storyrail` command: switches to the orchestrator mode and passes your arguments. |
@@ -44,19 +44,24 @@ git config --global user.email "you@example.com"
 gh auth login        # GitHub.com → HTTPS → log in with a browser
 ```
 
-### The repo
+### The repos
+
+Clone only the hub; it clones the two projects into `projects/` itself.
 
 ```bash
-git clone https://github.com/anandhan-naveen/storyrail.git
+git clone https://github.com/storyrail-squad/storyrail.git
 cd storyrail
 git switch bob
-(cd frontend && npm ci) && (cd tests/ui && npm ci && npx playwright install chromium) && (cd tests/api && npm ci)
+node scripts/storyrail-workspace.mjs sync      # clones library-frontend and library-backend into projects/
+(cd projects/frontend && npm ci) && (cd projects/frontend/tests/ui && npm ci && npx playwright install chromium) && (cd projects/backend/tests/api && npm ci)
 ```
+
+The repo names and QA URL live in `storyrail.config.json`. To use your GitLab projects at the office, change them there.
 
 ### IBM Bob
 
 1. Install and sign in to IBM Bob (IDE) the way your organisation provides it.
-2. **File → Open Folder… →** the `storyrail` folder (the repo root, not a subfolder).
+2. **File → Open Folder… →** the `storyrail` folder (the hub root, not a subfolder and not a project in `projects/`).
 3. Open the mode selector in the chat. You should see the ten **StoryRail · …** modes. If not, open
    Settings → Modes → *Edit Project Modes*: it should show `.bob/custom_modes.yaml`. A YAML error there hides all of them.
 4. Type `/` in the chat: **`/storyrail`** should be in the list.
@@ -82,7 +87,7 @@ unclear. Never approve `git push --force`, `git reset --hard` or anything that d
 
 Run **one story or bug at a time**: the dashboard and your working folder follow a single run.
 
-1. **Your analyst writes the story** as a GitHub issue with the *User story* template: the story, numbered acceptance
+1. **Your analyst writes the story** as an issue in the backlog repo ([squad-backlog](https://github.com/storyrail-squad/squad-backlog)) with the *User story* template: the story, numbered acceptance
    criteria, and tick **Frontend** and/or **Backend**. StoryRail never writes or changes requirements.
 2. Start the dashboard in a terminal and leave it open: `node scripts/storyrail-dashboard.mjs`, then open
    **http://localhost:4800**. Keep it on a second screen during a demo.
@@ -95,13 +100,13 @@ Run **one story or bug at a time**: the dashboard and your working folder follow
    Several issues that belong together: `/storyrail 46 47`.
 4. Answer when it stops at a gate:
    - questions about unclear acceptance criteria,
-   - **"PR #X is green. Merge and deploy to QA?"**,
+   - **"PRs are green: backend #X, frontend #Y. Merge and deploy to QA?"** (one PR per project the story touches; backend merges first),
    - which QA defects to fix now,
    - **sign-off**.
 5. Bugs found later: the analyst uses the **Bug** template (steps, expected, actual), then `/storyrail fix 50 51`.
 6. Where is a run? `/storyrail status`.
 
-Everything a run produces (spec, review and scan reports, QA log and screenshots) is committed under `runs/issue-<N>/`.
+Everything a run produces (spec, review and scan reports, QA log and screenshots) is committed in the hub under `runs/issue-<N>/`. The code goes to the project repos.
 
 ## Good to know
 
@@ -121,9 +126,10 @@ Everything a run produces (spec, review and scan reports, QA log and screenshots
 |---|---|
 | `/storyrail` not in the `/` list | Open the repo root as the folder in Bob; check `.bob/commands/storyrail.md` exists (`git switch bob`). |
 | StoryRail modes missing | Settings → Modes → *Edit Project Modes*; fix the YAML error it shows, then reload the window. |
-| "Edit not allowed" in a mode | Working as intended: that file is outside the mode's lane. The orchestrator sends it to the right mode. |
+| "Edit not allowed" in a mode | Working as intended: that file is outside the mode's lane (another project, or its tests/contract). The orchestrator sends it to the right mode. |
 | `gh: not logged in` | `gh auth login` |
 | Backend steps say "Maven missing" | `brew install maven` and `brew install --cask temurin@21`, then open a new terminal. |
-| Playwright "browser not installed" | `(cd tests/ui && npx playwright install chromium)` |
+| Playwright "browser not installed" | `(cd projects/frontend/tests/ui && npx playwright install chromium)` |
+| `projects/frontend` missing, or "has uncommitted changes" | `node scripts/storyrail-workspace.mjs sync`; for uncommitted changes, commit or discard them in that project first. |
 | Dashboard shows "dashboard server stopped" | `node scripts/storyrail-dashboard.mjs` in a separate terminal. |
 | A stage fails twice | The orchestrator stops and tells you why. Fix or answer, then say "continue". |
