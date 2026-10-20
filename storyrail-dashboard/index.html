@@ -59,13 +59,14 @@ h1{font-family:var(--f-display);font-weight:800;font-size:clamp(1.35rem,2.6vw,1.
 .chip{font-family:var(--f-mono);font-size:.74rem;padding:5px 10px;border-radius:999px;border:1px solid color-mix(in srgb,var(--on-brand) 30%,transparent);color:color-mix(in srgb,var(--on-brand) 85%,transparent);white-space:nowrap}
 .chip b{color:var(--on-brand);font-weight:600}
 .topbar .in{position:relative}
-.theme{order:3;display:inline-flex;gap:2px;padding:2px;border-radius:999px;border:1px solid color-mix(in srgb,var(--on-brand) 30%,transparent)}
+.theme{position:absolute;top:8px;right:max(16px,env(safe-area-inset-right,0px));display:inline-flex;gap:2px;padding:2px;border-radius:999px;border:1px solid color-mix(in srgb,var(--on-brand) 30%,transparent)}
 .theme button{display:inline-flex;align-items:center;justify-content:center;width:30px;height:26px;padding:0;border:0;border-radius:999px;background:transparent;color:color-mix(in srgb,var(--on-brand) 80%,transparent);cursor:pointer}
 .theme button svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .theme button:hover{color:var(--on-brand)}
 .theme button[aria-pressed="true"]{background:color-mix(in srgb,var(--on-brand) 22%,transparent);color:var(--on-brand);font-weight:700}
 .theme button:focus-visible{outline:2px solid var(--on-brand);outline-offset:1px}
-@media (max-width:700px){.theme{position:absolute;top:14px;right:max(16px,env(safe-area-inset-right,0px))}.topbar .brand{padding-right:104px}}
+@media (min-width:701px){.topbar .chips{margin-top:28px}}
+@media (max-width:700px){.theme{top:14px}.topbar .brand{padding-right:104px}}
 .chip.live::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:#7ff0b8;margin-right:6px;vertical-align:1px;animation:blink 1.6s ease-in-out infinite}
 
 .wrap{max-width:1400px;margin:0 auto;padding-block:20px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:20px}
@@ -324,7 +325,7 @@ svg.wires{position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-eve
         <p class="sub" id="subtitle">Waiting for the orchestrator to start a run…</p>
       </div>
     </div>
-    <div class="chips" style="order:2;margin-left:auto">
+    <div class="chips">
       <span class="chip" id="conn">connecting</span>
       <span class="chip">phase <b id="phase">—</b></span>
       <span class="chip">elapsed <b id="elapsed">00:00</b></span>
