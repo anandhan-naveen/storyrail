@@ -249,14 +249,18 @@ svg.wires{position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-eve
 .orch-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
 .orch-head h2{font-family:var(--f-display);font-weight:800;font-size:1.05rem;margin:0}
 .orch-head p{margin:0;color:var(--muted);font-size:.88rem}
-.orch-now{margin:0;font-size:1rem;min-height:1.5em}
+.orch-now{margin:0;font-size:1rem;min-height:1.5em;display:grid;gap:4px}
+.orch-now span{display:block;padding-left:12px;border-left:3px solid var(--line)}
 .orch-now b{font-family:var(--f-display)}
 #orch{width:100%;height:auto;max-height:78vh;display:block;margin:0 auto;overflow:visible}
 #orch .ring{fill:none;stroke:var(--grid);stroke-width:2}
 #orch .arc{fill:none;stroke:var(--line);stroke-width:2.5}
 #orch .arc.lit{stroke:var(--brand)}
 #orch .arc.par{stroke-dasharray:3 6}
-#orch .arc-lab{font:600 13px var(--f-body);fill:var(--muted)}
+#orch .arc.loop{stroke-dasharray:7 6}
+#orch .arc.loop.lit{stroke:var(--wait)}
+#orch .arc-lab.loop.lit{fill:var(--wait)}
+#orch .arc-lab{font:600 13px var(--f-body);fill:var(--muted);paint-order:stroke;stroke:var(--canvas);stroke-width:5px;stroke-linejoin:round}
 #orch .arc-lab.lit{fill:var(--ok)}
 #orch .spoke{stroke:var(--line);stroke-width:1.5;opacity:.55}
 #orch .spoke.done{stroke:var(--brand);opacity:.35}
@@ -286,7 +290,7 @@ svg.wires{position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-eve
 #orch .hub .htrk{fill:none;stroke:var(--brand-soft);stroke-width:6}
 #orch .hub .hname{font:800 30px var(--f-display);fill:#fff;text-anchor:middle}
 #orch .hub .hrole{font:600 14px var(--f-body);fill:rgba(255,255,255,.8);text-anchor:middle}
-#orch .hub .hphase{font:700 15px var(--f-body);fill:#9ff0cd;text-anchor:middle}
+#orch .hub .hphase{font:700 13px var(--f-body);fill:#9ff0cd;text-anchor:middle}
 #orch .po .bg{stroke-dasharray:5 4}
 @media (max-width:700px){#orch .rl,#orch .arc-lab{display:none}#orch .nm{font-size:26px}}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
@@ -323,12 +327,12 @@ svg.wires{position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-eve
   </section>
 
   <div class="tabs" role="tablist" aria-label="Dashboard view">
-    <button role="tab" id="tab-squad" aria-controls="view-squad" aria-selected="true">Squad</button>
-    <button role="tab" id="tab-orch" aria-controls="view-orch" aria-selected="false" tabindex="-1">Orchestration</button>
+    <button role="tab" id="tab-orch" aria-controls="view-orch" aria-selected="true">Orchestration</button>
+    <button role="tab" id="tab-squad" aria-controls="view-squad" aria-selected="false" tabindex="-1">Squad</button>
     <button role="tab" id="tab-flow" aria-controls="view-flow" aria-selected="false" tabindex="-1">Flow</button>
   </div>
 
-  <section class="squad" id="view-squad" role="tabpanel" aria-labelledby="tab-squad">
+  <section class="squad" id="view-squad" role="tabpanel" aria-labelledby="tab-squad" hidden>
     <div class="stage" aria-live="polite">
       <h2 id="stage-title">Working now</h2>
       <div class="stage-list" id="stage-list"><p class="stage-empty">The squad is waiting for a story. Start one with /storyrail &lt;issue&gt;.</p></div>
@@ -340,7 +344,7 @@ svg.wires{position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-eve
     <div class="roster" id="roster"></div>
   </section>
 
-  <section class="orch" id="view-orch" role="tabpanel" aria-labelledby="tab-orch" hidden>
+  <section class="orch" id="view-orch" role="tabpanel" aria-labelledby="tab-orch">
     <div class="orch-head">
       <h2>How the squad lead hands out the work</h2>
       <p>The lit spoke is the hand-off happening now. Select anyone to see their work.</p>
@@ -664,7 +668,7 @@ const NS="http://www.w3.org/2000/svg";
 const O={cx:500,cy:395,R:270,r:38,hub:92};
 // Hand-off labels between ring neighbours, keyed "from>to"; "par" = the two work side by side.
 const HANDOFF={"start":"Story picked","req-fetch>fe-dev":"Spec + contract","fe-dev>be-dev":"par","be-dev>ui-tests":"Code + unit tests","ui-tests>api-tests":"par",
-  "api-tests>reviewer":"Tests green","reviewer>gate":"par","gate>fixer":"Findings","fixer>cicd":"Review approved","cicd>manual-tests":"Deployed to QA","end":"Ready for sign-off"};
+  "api-tests>reviewer":"Tests green","reviewer>gate":"par","gate>fixer":"Findings","fixer>cicd":"loop","cicd>manual-tests":"Deployed to QA","end":"Ready for sign-off"};
 let orchBuilt=false, orchNodes={}, orchSpokes={}, orchArcs=[];
 function svgEl(tag,attrs,parent){ const e=document.createElementNS(NS,tag); for(const k in attrs) e.setAttribute(k,attrs[k]); if(parent) parent.append(e); return e; }
 function polar(deg,rad){ const a=deg*Math.PI/180; return [O.cx+rad*Math.cos(a), O.cy+rad*Math.sin(a)]; }
@@ -691,13 +695,37 @@ function buildOrch(){
     const key=i===0?"start":(i===n-1?"end":(m.stations[m.stations.length-1]+">"+next.stations[0]));
     const lab=HANDOFF[key]; const a1=angle(i)+delta, a2=angle(i+1)-delta;
     const [x1,y1]=polar(a1,O.R), [x2,y2]=polar(a2,O.R);
+    if(lab==="loop") return; // the fixer hands back to the reviewers, who approve the release (drawn below)
     const par=lab==="par";
     const path=svgEl("path",{class:"arc"+(par?" par":""),d:`M${x1},${y1} A${O.R},${O.R} 0 0 1 ${x2},${y2}`,"marker-end":par?"":"url(#o-arr)"},svg);
     let text=null;
-    if(lab&&!par){ const mid=(angle(i)+angle(i+1))/2; const [lx,ly]=polar(mid,O.R-74);
+    if(lab&&!par){ const mid=(angle(i)+angle(i+1))/2; const [lx,ly]=polar(mid,key==="gate>fixer"?O.R-34:O.R-74);
       text=svgEl("text",{class:"arc-lab",x:lx,y:ly,"text-anchor":"middle","dominant-baseline":"middle"},svg); text.textContent=lab; }
     orchArcs.push({path,text,target:next,start:i===0,end:i===n-1});
   });
+  // review loop: the fixer goes back to both reviewers, and their approval goes straight to release
+  const at=st=>slots.findIndex(m=>m.stations.includes(st));
+  const ctr=i=>polar(angle(i),O.R);
+  function chord(fi,ti,bend,cls,lab,labPos){
+    const [x0,y0]=ctr(fi),[x2,y2]=ctr(ti); const mx=(x0+x2)/2,my=(y0+y2)/2;
+    const cx=mx+(O.cx-mx)*bend, cy=my+(O.cy-my)*bend;
+    const trim=(x,y,d)=>{ const dx=cx-x,dy=cy-y,l=Math.hypot(dx,dy); return [x+dx/l*d,y+dy/l*d]; };
+    const [sx,sy]=trim(x0,y0,O.r+12),[ex,ey]=trim(x2,y2,O.r+14);
+    const path=svgEl("path",{class:"arc "+cls,d:`M${sx},${sy} Q${cx},${cy} ${ex},${ey}`,"marker-end":"url(#o-arr)"},svg);
+    let text=null;
+    if(lab){ const [lx,ly]=polar(labPos[0],labPos[1]);
+      text=svgEl("text",{class:"arc-lab "+cls,x:lx,y:ly,"text-anchor":"middle","dominant-baseline":"middle"},svg); text.textContent=lab; }
+    return {path,text};
+  }
+  const iFix=at("fixer"), iRev=at("reviewer"), iGate=at("gate"), iRel=at("cicd");
+  if([iFix,iRev,iGate,iRel].every(i=>i>0)){
+    const A=i=>angle(i);
+    const back=[chord(iFix,iGate,.18,"loop"),chord(iFix,iRev,.22,"loop","Fixed, check again",[(A(iGate)+A(iRev))/2-6,O.R-74])];
+    const fwd=[chord(iGate,iRel,.58,"go"),chord(iRev,iRel,.58,"go","Approved",[(A(iFix)+A(iRel))/2-2,O.R-96])];
+    back.forEach(c=>orchArcs.push({...c,when:()=>((state.fixer||{}).status==="done")}));
+    fwd.forEach(c=>orchArcs.push({...c,when:()=>{ const t=(state.cicd||{}).status; return !!t&&t!=="pending"&&t!=="skipped"; }}));
+  }
+  svg.querySelectorAll(".arc-lab").forEach(t=>svg.append(t)); // labels above every line
   // hub: the squad lead
   const hub=svgEl("g",{class:"hub node",tabindex:"0",role:"button"},svg); orchNodes[lead.id]={g:hub,m:lead};
   svgEl("circle",{class:"htrk",cx:O.cx,cy:O.cy,r:O.hub},hub);
@@ -753,6 +781,7 @@ function renderOrch(){
     if(st==="running"||st==="waiting"||st==="failed") now.push([m,ms,st]);
   });
   orchArcs.forEach(a=>{
+    if(a.when){ const on=a.when(); a.path.classList.toggle("lit",on); if(a.text) a.text.classList.toggle("lit",on); return; }
     const t=memberState(a.target);
     const lit=a.start?!!run.startedAt:a.end?((state.signoff||{}).status&&state.signoff.status!=="pending"):(t.status!=="pending"&&t.status!=="skipped");
     a.path.classList.toggle("lit",!!lit); if(a.text) a.text.classList.toggle("lit",!!lit);
@@ -760,23 +789,22 @@ function renderOrch(){
   const box=$("orch-now"); box.textContent="";
   if(!now.length){ box.textContent=run.endedAt?"The story is signed off.":run.startedAt?lead.name+" is handing over the next task.":"Waiting for a story."; return; }
   const end=t=>/[.?!]$/.test(t)?t:t+".";
-  now.sort((a,b)=>(a[0]===po)-(b[0]===po)).forEach(([m,ms,st],i)=>{ if(i) box.append("   "); const b=document.createElement("b"); b.textContent=m.name; box.append(b,
+  now.sort((a,b)=>(a[0]===po)-(b[0]===po)).forEach(([m,ms,st])=>{ const line=document.createElement("span"); const b=document.createElement("b"); b.textContent=m.name; line.style.borderColor=st==="running"?(KIND[m.kind]||KIND.lead)[0]:st==="failed"?"var(--bad)":"var(--wait)"; box.append(line); line.append(b,
     m===po?" has a decision to make.":st==="waiting"?end(" is waiting for "+po.name+(ms.note?": "+ms.note:"")):st==="failed"?end(" needs attention"+(ms.note?": "+ms.note:"")):(ms.note?": "+ms.note:" is working")+(ms.progress?" ("+ms.progress+"%)":"")+"."); });
 }
 
 /* ---------- Tabs ---------- */
-const TABS=["squad","orch","flow"];
+const TABS=["orch","squad","flow"];
 function showTab(name,focus){
   TABS.forEach(t=>{ const on=t===name; $("tab-"+t).setAttribute("aria-selected",on); $("tab-"+t).tabIndex=on?0:-1; $("view-"+t).hidden=!on; });
   if(focus) $("tab-"+name).focus();
   if(name==="flow") requestAnimationFrame(drawWires);
   if(name==="orch") renderOrch();
-  try{ localStorage.setItem("storyrail.tab",name); }catch(e){ /* storage blocked: the tab just isn't remembered */ }
 }
 TABS.forEach(t=>$("tab-"+t).addEventListener("click",()=>showTab(t)));
 document.querySelector(".tabs").addEventListener("keydown",e=>{ if(e.key!=="ArrowRight"&&e.key!=="ArrowLeft") return; e.preventDefault();
   const cur=TABS.findIndex(t=>$("tab-"+t).getAttribute("aria-selected")==="true"); showTab(TABS[(cur+(e.key==="ArrowRight"?1:TABS.length-1))%TABS.length],true); });
-try{ const t=localStorage.getItem("storyrail.tab"); if(TABS.includes(t)&&t!=="squad") showTab(t); }catch(e){ /* default view */ }
+/* the dashboard always opens on Orchestration */
 
 fetch("squad.json",{cache:"no-store"}).then(r=>r.ok?r.json():null).then(d=>{ if(!d) return; squad=d.members||[]; engine=d.engine||"records";
   squad.forEach(m=>m.stations.forEach(s=>byStation[s]=m)); byStation.orchestrator=squad.find(m=>m.kind==="lead"); renderSquad(); }).catch(()=>{});
