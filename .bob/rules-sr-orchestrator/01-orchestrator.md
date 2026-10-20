@@ -100,7 +100,7 @@ Gate: each dev's commands green. Commit in each project.
 Gate: green except documented `test.fail()` findings (UI) or `@wip`-tagged findings (API). Product bugs → send to that lane's dev once, then re-run the test mode. Commit in each repo (the API scenarios go to `projects/api-tests`).
 
 **4. Review + scan, round k (start k=1).** `run phase "Review + scan"`. `lanes clean`, then **sr-reviewer** (the diff of each repo in the run, `main...HEAD`) ∥ **sr-scan** (round k, the run's lanes) as parallel subagents, then `lanes check reviewer scan` (the reviewer may change nothing; the scan only writes its report). **Every round**, save the reviewer's summary as `runs/issue-N/review-round<k>.md`.
-Then `findings <blocker> <major> <minor> <fixed-so-far>` (both reports combined).
+Then `findings <blocker> <major> <minor> <fixed-so-far>` (both reports combined; the three severities count the findings **still open**, so after a clean re-check it is `findings 0 0 0 <fixed>`).
 
 **5. Fix.** `run phase Fix`. If both reports are already clean (no findings at all) → `set fixer skipped 0 "nothing to fix"`. Otherwise subtask **sr-fixer** with k, update `findings … <fixed>`, commit in each changed repo, and go back to step 4 with k+1.
 Gate: the quality gate above. Max 2 fix rounds; still failing → **ASK** the user with the open findings.

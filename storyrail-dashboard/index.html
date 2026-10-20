@@ -526,9 +526,11 @@ function renderRun(){
   const m=run.metrics||{};
   const t=(id,b,o)=>{ if(!o||o.total==null) return; if(o.pending){ $(id).innerHTML="CI<small>pending</small>"; bar(b,0); return;} $(id).innerHTML=o.passed+"<small>/ "+o.total+"</small>"; bar(b,o.total?o.passed/o.total*100:0); };
   t("k-unit","kb-unit",m.unit); t("k-api","kb-api",m.api); t("k-ui","kb-ui",m.ui);
-  if(m.review){ const r=m.review, tot=(r.blocker||0)+(r.major||0)+(r.minor||0);
-    $("k-rev").innerHTML=tot+"<small>"+(r.fixed||0)+" fixed</small>"; bar("kb-rev",tot?(r.fixed||0)/tot*100:0);
-    $("findings").hidden=false; const mx=Math.max(1,tot);
+  if(m.review){ // blocker/major/minor are the findings still open; fixed counts the ones already fixed
+    const r=m.review, open=(r.blocker||0)+(r.major||0)+(r.minor||0), fixed=r.fixed||0, found=open+fixed;
+    if(!found){ $("k-rev").innerHTML="0<small>findings</small>"; bar("kb-rev",100); }
+    else{ $("k-rev").innerHTML=fixed+"<small>/ "+found+" fixed"+(open?" · "+open+" open":"")+"</small>"; bar("kb-rev",fixed/found*100); }
+    $("findings").hidden=false; const mx=Math.max(1,found);
     ["blocker","major","minor","fixed"].forEach(k=>{ setText("sn-"+k,r[k]||0); bar("sv-"+k,(r[k]||0)/mx*100); }); }
   if(m.security){ const s=m.security; $("k-sec").innerHTML=(s.vulns??"—")+"<small>/ "+(s.lint??"—")+" lint</small>"; bar("kb-sec",(s.vulns===0&&s.lint===0)?100:30); }
   const iss=run.issues; if(Array.isArray(iss)&&iss.length){ const box=$("issues"); box.innerHTML="";
