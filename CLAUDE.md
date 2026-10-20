@@ -17,6 +17,7 @@ This repo is the **hub**: agents, dashboard and run reports. It contains no prod
 | Backlog: stories and bugs only | `storyrail-squad/squad-backlog` | – (read with `gh issue view <n> -R <backlog>`) | – |
 | Frontend project | `storyrail-squad/library-frontend` | `projects/frontend/` | GitHub Pages (QA) |
 | Backend project, **owns the API contract** | `storyrail-squad/library-backend` | `projects/backend/` | Render (QA) |
+| API acceptance tests (Cucumber + Java) for the backend | `storyrail-squad/library-api-tests` | `projects/api-tests/` | – (runs isolated on every backend PR, and `@qa` against the QA API after each deploy) |
 
 `projects/` is not part of the hub repo: `node scripts/storyrail-workspace.mjs sync` clones the projects there (or
 updates them to `main`). Each project folder is its own git repo with its own branches, PRs and pipelines.
@@ -30,7 +31,9 @@ updates them to `main`). Each project folder is its own git repo with its own br
 | `projects/frontend/contract/openapi.yaml` | Pinned copy of the backend's contract; the frontend CI fails if it differs from the backend's `main` | sr-req-fetch copies it |
 | `projects/backend/src/` | Java 21, Spring Boot 3.5, Maven, Spring Data JPA, H2, Bean Validation, ProblemDetail errors | sr-be-dev |
 | `projects/backend/docs/api/openapi.yaml` | API contract, **single source of truth** for FE, BE and API tests | sr-req-fetch proposes, devs implement |
-| `projects/backend/tests/api/` | Playwright API tests against a running backend (`API_BASE_URL`) | sr-api-tests |
+| `projects/api-tests/src/test/resources/features/` | Cucumber scenarios (Gherkin), tagged per AC (`@BE-AC3`); `@qa` = also run against the QA API | sr-api-tests |
+| `projects/api-tests/src/test/java/` | Step definitions (RestAssured), contract validation, test data | sr-api-tests |
+| `projects/api-tests/contract/openapi.yaml` | Pinned copy of the backend's contract (CI fails if it differs) | sr-req-fetch copies it |
 | `projects/*/.github/workflows/` | Each project's `ci-cd.yml` (build, test, deploy to QA, smoke) and `security.yml` (CI only — agents don't edit these unless the story is about CI) | — |
 | `runs/issue-<N>/` | Everything one run produces: spec, review and scan reports, fixer responses, QA log | all |
 | `tests/manual/` | Manual QA records of the first run | sr-manual-qa |
@@ -46,8 +49,10 @@ updates them to `main`). Each project folder is its own git repo with its own br
 (cd projects/backend && mvn spring-boot:run)    # http://localhost:8080, H2 seeded
 # UI automation (builds the app itself; needs the frontend's own deps installed)
 (cd projects/frontend/tests/ui && npm ci && npm run lint && npm run typecheck && npx playwright test)
-# API automation (backend must be running on :8080)
-(cd projects/backend/tests/api && npm ci && npm run lint && npm run typecheck && API_BASE_URL=http://localhost:8080 npx playwright test)
+# API acceptance tests, Cucumber + Java (backend must be running on :8080)
+(cd projects/api-tests && mvn -B verify)                                    # all scenarios, against http://localhost:8080
+(cd projects/api-tests && mvn -B verify -Dcucumber.filter.tags="@BE-AC3")   # one acceptance criterion
+(cd projects/api-tests && mvn -B verify -Dapi.baseUrl=<QA URL> -Dcucumber.filter.tags="@qa")   # the QA subset against QA
 ```
 
 First time on a machine: `node scripts/storyrail-workspace.mjs sync`, then `(cd projects/frontend/tests/ui && npx playwright install chromium)`.
@@ -55,10 +60,11 @@ First time on a machine: `node scripts/storyrail-workspace.mjs sync`, then `(cd 
 ## Conventions every agent follows
 
 - **Stay in your lane.** Each agent writes only to the paths its brief allows. Report problems outside your lane instead of fixing them.
-- **Two repos, one story.** A story can touch both projects. Each touched project gets its own branch and its own PR; they reference the same backlog issue.
-- **Contract first.** API changes go into `projects/backend/docs/api/openapi.yaml` before code, and the same file is copied to `projects/frontend/contract/openapi.yaml`. Field names, status codes and problem titles must match it exactly. The backend PR merges before the frontend PR.
+- **Several repos, one story.** A story can touch the frontend, the backend and the API tests. Each touched repo gets a branch with the **same name** and its own PR; they reference the same backlog issue. The backend lane always includes library-api-tests.
+- **Contract first.** API changes go into `projects/backend/docs/api/openapi.yaml` before code, and the same file is copied to `projects/frontend/contract/openapi.yaml` and `projects/api-tests/contract/openapi.yaml`. Field names, status codes and problem titles must match it exactly. Merge order: backend, then API tests, then frontend.
 - **Errors** are RFC 7807 `application/problem+json`; 400s carry `errors: { field: message }`. Never leak stack traces or class names.
 - **Frontend:** no `any`, no `dangerouslySetInnerHTML`, no browser dialogs (`alert/confirm/prompt`). Accessible names and roles first; `data-testid` as the fallback hook for tests. Keyboard focus must never land on `<body>` after an action. Respect `prefers-reduced-motion`.
+- **API tests:** Gherkin that the analyst can read; one scenario per behaviour; values in tables are JSON literals; fresh data through `${…}` placeholders; every scenario cleans up after itself, so it is safe against QA. Java steps use constructor injection (PicoContainer) and compile with zero warnings.
 - **Backend:** Java records for DTOs, constructor injection only, no Lombok. Inject `java.time.Clock` for anything time-based. Tests: JUnit 5, Mockito, `@WebMvcTest`, `@DataJpaTest`.
 - **Tests are tagged with the acceptance criterion they prove**, e.g. `@AC3` in the title, so every AC is traceable.
 - **Every bug fix gets a regression test** that fails on the old code.

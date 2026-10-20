@@ -18,12 +18,12 @@ The orchestrator gives you the issue number(s), the run folder, and the **mode**
 2. Read each issue with comments from the backlog repo (`storyrail.config.json` → `backlog.repo`, the orchestrator also gives it to you): `gh issue view <n> -R <backlog> --json number,title,body,labels,comments,url`.
 3. Read the current code enough to know what already exists (`projects/backend/docs/api/openapi.yaml`, routes/components in `projects/frontend/src`, controllers in `projects/backend/src/main/java`). Reuse before you add. The projects are on `main` (the orchestrator synced them).
 4. Decide the **lanes**: `frontend`, `backend`, or both. Each lane is one project repo. Use, in order: the `frontend`/`backend` labels, the ticked boxes in the issue body (`- [x] Frontend (…)`, `- [x] Backend (…)`), then the content. A UI-only change with no API change is frontend only; an API-only change is backend only.
-5. Number the acceptance criteria `AC1…ACn` (keep the issue's own IDs if it has them, e.g. `FE-AC3`). For each, write how it will be tested: unit, UI automation, API automation, or manual only.
+5. Number the acceptance criteria `AC1…ACn` (keep the issue's own IDs if it has them, e.g. `FE-AC3`). For each, write how it will be tested: unit, UI automation, API automation (and whether it also belongs in the `@qa` run against QA), or manual only.
    **Bug mode:** the ACs come from the bug's *expected* behaviour, one per defect, IDs `BUG-<issue>` (e.g. `BUG-38`), each tested by a regression test at the lowest level that reproduces it. Put the steps to reproduce and the actual result under Notes for developers, and add "Found in QA for #N" if the orchestrator gave a story. If the steps or the expected result are missing, that is an open question.
-6. If the API changes, edit the contract in the backend project, `projects/backend/docs/api/openapi.yaml` (contract first; the backend repo owns it), copy the result to `projects/frontend/contract/openapi.yaml` so both sides build against the same file, and list exactly what changed. A contract change means the backend lane is needed too.
+6. If the API changes, edit the contract in the backend project, `projects/backend/docs/api/openapi.yaml` (contract first; the backend repo owns it), copy the result to `projects/frontend/contract/openapi.yaml` and `projects/api-tests/contract/openapi.yaml` so every side builds and tests against the same file, and list exactly what changed. A contract change means the backend lane is needed too.
 7. Write `runs/issue-<N>/spec.md` with these sections, in this order:
    - `## Issues` (number, title, URL, and `story` or `bug`)
-   - `## Lanes` — one line: `frontend`, `backend` or `frontend, backend` (= the project repos that get a branch and a PR)
+   - `## Lanes` — one line: `frontend`, `backend` or `frontend, backend` (= the project repos that get a branch and a PR; `backend` always includes library-api-tests)
    - `## Acceptance criteria` — table: ID | criterion | test level
    - `## Contract changes` — "none" or the list
    - `## Notes for developers` — existing code to reuse, edge cases, non-functional needs (a11y, performance)
@@ -31,7 +31,7 @@ The orchestrator gives you the issue number(s), the run folder, and the **mode**
 8. If there are open questions that block building, set `waiting` (`set req-fetch waiting 100 "N questions for the PO"`) and stop. Otherwise `set req-fetch done 100 "<lanes> · <n> ACs"`.
 
 ## Rules
-- Write only the run folder's `spec.md` and the two contract files (`projects/backend/docs/api/openapi.yaml`, `projects/frontend/contract/openapi.yaml`). Don't commit in the projects; the orchestrator does.
+- Write only the run folder's `spec.md` and the three contract files (`projects/backend/docs/api/openapi.yaml`, `projects/frontend/contract/openapi.yaml`, `projects/api-tests/contract/openapi.yaml`). Don't commit in the projects; the orchestrator does.
 - Never weaken or drop an acceptance criterion. If one is untestable, it goes under Open questions.
 
 ## Final reply (to the orchestrator, ≤ 120 words)
