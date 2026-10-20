@@ -161,6 +161,89 @@ svg.wires{position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-eve
 @keyframes pop{0%{transform:scale(1)}40%{transform:scale(1.05)}100%{transform:scale(1)}}
 @keyframes slidein{from{opacity:.2;transform:translateY(-6px)}to{opacity:1;transform:none}}
 :focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+/* ---------- Squad view ---------- */
+.tabs{display:inline-flex;gap:4px;padding:4px;border-radius:12px;background:var(--canvas);border:1px solid var(--line);justify-self:start}
+.tabs button{font:600 .92rem/1 var(--f-display);color:var(--muted);background:none;border:0;border-radius:9px;padding:9px 16px;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--brand-deep);color:var(--on-brand)}
+.tabs button:focus-visible,.seat:focus-visible,.stage-ask:focus-visible,.drawer button:focus-visible,.drawer a:focus-visible,.drawer textarea:focus-visible{outline:3px solid var(--run);outline-offset:2px}
+[hidden]{display:none!important}
+
+.squad{display:grid;gap:18px}
+.stage{background:var(--canvas);border:1px solid var(--line);border-radius:16px;padding:20px 22px;display:grid;gap:16px;position:relative;overflow:hidden}
+.stage::before{content:"";position:absolute;inset:0 auto 0 0;width:5px;background:var(--brand)}
+.stage h2,.roster-head h2{font-family:var(--f-display);font-weight:800;font-size:1.05rem;margin:0}
+.stage-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:14px 28px}
+.performer{display:grid;grid-template-columns:auto minmax(0,1fr);gap:16px;align-items:center}
+.performer .who{font-family:var(--f-display);font-weight:800;font-size:1.25rem;line-height:1.15}
+.performer .who span{display:block;font-family:var(--f-body);font-weight:500;font-size:.92rem;color:var(--muted)}
+.performer .doing{font-family:var(--f-display);font-weight:600;font-size:clamp(1.15rem,2vw,1.5rem);line-height:1.25;margin:6px 0 4px;overflow-wrap:anywhere}
+.performer .meta{display:flex;flex-wrap:wrap;gap:10px;align-items:center;color:var(--muted);font-size:.85rem}
+.stage-ask{font:600 .85rem/1 var(--f-body);color:var(--brand-deep);background:var(--brand-soft);border:1px solid color-mix(in srgb,var(--brand) 40%,transparent);border-radius:999px;padding:7px 12px;cursor:pointer}
+.stage-empty{color:var(--muted);margin:0;font-size:1.05rem}
+
+.av{--sz:48px;--k:var(--brand);--kf:var(--brand-soft);--p:0;position:relative;width:var(--sz);height:var(--sz);flex:none;border-radius:50%;display:grid;place-items:center;
+  background:conic-gradient(var(--k) calc(var(--p)*1%),color-mix(in srgb,var(--k) 18%,transparent) 0)}
+.av::before{content:"";position:absolute;inset:4px;border-radius:50%;background:var(--kf)}
+.av b{position:relative;font:800 calc(var(--sz)*.36)/1 var(--f-display);color:var(--k);letter-spacing:-.02em}
+.av.lg{--sz:76px}.av.xl{--sz:60px}
+.av .st{position:absolute;right:-1px;bottom:-1px;width:calc(var(--sz)*.32);height:calc(var(--sz)*.32);border-radius:50%;border:2.5px solid var(--canvas);background:var(--line);display:grid;place-items:center;color:#fff}
+.av .st svg{width:70%;height:70%}
+.av.running .st{background:var(--run)} .av.done .st{background:var(--ok)} .av.waiting .st{background:var(--wait)} .av.failed .st{background:var(--bad)}
+.av.running::after{content:"";position:absolute;inset:-5px;border-radius:50%;border:2px solid var(--k);opacity:.0;animation:ring 1.8s ease-out infinite}
+@keyframes ring{0%{opacity:.55;transform:scale(.92)}100%{opacity:0;transform:scale(1.18)}}
+
+.roster-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+.roster-head p{margin:0;color:var(--muted);font-size:.88rem}
+.roster{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,232px),1fr));gap:12px}
+.seat{all:unset;box-sizing:border-box;cursor:pointer;display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px 12px;align-items:center;padding:12px 14px;border-radius:14px;
+  border:1.5px dashed var(--line);background:transparent;color:var(--ink);min-height:96px;transition:background .3s,border-color .3s}
+.seat:hover{border-color:var(--muted)}
+.seat .nm{font:800 1rem/1.15 var(--f-display)}
+.seat .rl{font-size:.84rem;color:var(--muted);line-height:1.25}
+.seat .now{grid-column:1/-1;font-size:.86rem;line-height:1.35;display:flex;gap:7px;align-items:baseline;min-width:0}
+.seat .now i{flex:none;width:8px;height:8px;border-radius:50%;background:var(--line);transform:translateY(-1px)}
+.seat .now span{overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.seat.pending{color:var(--muted)} .seat.pending .nm{color:var(--ink);opacity:.75}
+.seat.running{border:1.5px solid var(--k);background:var(--kf)} .seat.running .now i{background:var(--run);animation:blink 1.4s ease-in-out infinite}
+.seat.done{border:1.5px solid var(--line);background:var(--canvas)} .seat.done .now i{background:var(--ok)}
+.seat.waiting{border:1.5px solid var(--wait);background:var(--wait-soft)} .seat.waiting .now i{background:var(--wait)}
+.seat.failed{border:1.5px solid var(--bad);background:var(--bad-soft)} .seat.failed .now i{background:var(--bad)}
+.seat.skipped{opacity:.55}
+
+/* ---------- Member drawer ---------- */
+.scrim{position:fixed;inset:0;background:rgba(10,20,16,.35);z-index:40}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(460px,100vw);background:var(--canvas);border-left:1px solid var(--line);z-index:41;display:grid;grid-template-rows:auto minmax(0,1fr) auto;box-shadow:-18px 0 40px rgba(0,0,0,.18)}
+.drawer header{padding:18px 18px 14px;border-bottom:1px solid var(--line);display:grid;gap:12px}
+.drawer .top{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:14px;align-items:center}
+.drawer h2{font:800 1.3rem/1.1 var(--f-display);margin:0}
+.drawer h2 small{display:block;font:500 .92rem/1.3 var(--f-body);color:var(--muted);margin-top:3px}
+.drawer .close{all:unset;cursor:pointer;width:34px;height:34px;border-radius:10px;display:grid;place-items:center;color:var(--muted)}
+.drawer .close:hover{background:var(--grid)}
+.drawer .about{margin:0;font-size:.92rem;line-height:1.45}
+.drawer .works{display:flex;flex-wrap:wrap;gap:6px}
+.drawer .works span{font-size:.8rem;border-radius:999px;padding:3px 9px;background:var(--grid)}
+.drawer .works span.running{background:var(--run-soft);color:var(--run)} .drawer .works span.done{background:var(--ok-soft);color:var(--ok)} .drawer .works span.waiting{background:var(--wait-soft);color:var(--wait)} .drawer .works span.failed{background:var(--bad-soft);color:var(--bad)}
+.drawer .reports{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:.88rem}
+.drawer .reports a{color:var(--brand-deep);font-weight:600}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .drawer .reports a{color:var(--brand)}}
+.thread{overflow:auto;padding:16px 18px;display:flex;flex-direction:column;gap:10px}
+.bub{max-width:88%;padding:9px 12px;border-radius:14px;font-size:.92rem;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere}
+.bub time{display:block;font-size:.72rem;color:var(--muted);margin-top:3px}
+.bub.them{align-self:flex-start;background:var(--bg);border:1px solid var(--line);border-bottom-left-radius:4px}
+.bub.log{align-self:flex-start;background:transparent;border:1px dashed var(--line);color:var(--muted);font-size:.86rem}
+.bub.log.ok{color:var(--ok)} .bub.log.bad{color:var(--bad)} .bub.log.warn{color:var(--wait)}
+.bub.you{align-self:flex-end;background:var(--brand-deep);color:var(--on-brand);border-bottom-right-radius:4px}
+.bub.you time{color:color-mix(in srgb,var(--on-brand) 70%,transparent)}
+.bub.thinking{align-self:flex-start;color:var(--muted);font-style:italic}
+.thread .empty{color:var(--muted);font-size:.9rem;margin:auto 0}
+.ask{border-top:1px solid var(--line);padding:12px 18px 16px;display:grid;gap:8px}
+.ask form{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:end}
+.ask textarea{font:inherit;font-size:.95rem;resize:none;min-height:44px;max-height:140px;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--bg);color:var(--ink)}
+.ask button{font:700 .92rem/1 var(--f-display);border:0;border-radius:12px;padding:13px 16px;background:var(--brand-deep);color:var(--on-brand);cursor:pointer}
+.ask button:disabled{opacity:.55;cursor:default}
+.ask .engine{margin:0;font-size:.78rem;color:var(--muted)}
+.ask .err{margin:0;font-size:.85rem;color:var(--bad)}
+@media (max-width:520px){.performer{grid-template-columns:1fr}.av.lg{--sz:60px}}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -194,7 +277,24 @@ svg.wires{position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-eve
     <div class="kpi"><div class="lab">Vulns / lint</div><div class="val" id="k-sec">—</div><div class="bar"><i id="kb-sec"></i></div></div>
   </section>
 
-  <section class="board" aria-label="Delivery flow">
+  <div class="tabs" role="tablist" aria-label="Dashboard view">
+    <button role="tab" id="tab-squad" aria-controls="view-squad" aria-selected="true">Squad</button>
+    <button role="tab" id="tab-flow" aria-controls="view-flow" aria-selected="false" tabindex="-1">Flow</button>
+  </div>
+
+  <section class="squad" id="view-squad" role="tabpanel" aria-labelledby="tab-squad">
+    <div class="stage" aria-live="polite">
+      <h2 id="stage-title">Working now</h2>
+      <div class="stage-list" id="stage-list"><p class="stage-empty">The squad is waiting for a story. Start one with /storyrail &lt;issue&gt;.</p></div>
+    </div>
+    <div class="roster-head">
+      <h2>The squad</h2>
+      <p>In rail order. Select someone to see their work and ask them about it.</p>
+    </div>
+    <div class="roster" id="roster"></div>
+  </section>
+
+  <section class="board" id="view-flow" role="tabpanel" aria-labelledby="tab-flow" aria-label="Delivery flow" hidden>
     <div class="board-head">
       <h2>How a user story rides the rail</h2>
       <div class="legend">
@@ -223,6 +323,28 @@ svg.wires{position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-eve
       </div>
     </section>
   </div>
+  <div class="scrim" id="scrim" hidden></div>
+  <aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="d-name" hidden>
+    <header>
+      <div class="top">
+        <div class="av xl" id="d-av"><b></b></div>
+        <h2 id="d-name"></h2>
+        <button class="close" id="d-close" aria-label="Close"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+      </div>
+      <p class="about" id="d-about"></p>
+      <div class="works" id="d-works"></div>
+      <div class="reports" id="d-reports" hidden></div>
+    </header>
+    <div class="thread" id="d-thread"></div>
+    <div class="ask" id="d-ask">
+      <form id="d-form">
+        <textarea id="d-q" rows="1" maxlength="1000" aria-label="Your question"></textarea>
+        <button type="submit" id="d-send">Ask</button>
+      </form>
+      <p class="err" id="d-err" hidden></p>
+      <p class="engine" id="d-engine"></p>
+    </div>
+  </aside>
   <p class="foot">Live: agents report through <code>scripts/storyrail-status.mjs</code>; this page refreshes every 1.5 s.</p>
 </main>
 
@@ -345,12 +467,156 @@ function renderFeed(items){
   const ul=$("feed"); if(!items||!items.length) return; ul.innerHTML="";
   items.slice().reverse().forEach(it=>{ const key=it.t+it.agent+it.msg; const li=document.createElement("li"); li.className=(it.level||"")+(feedSeen.has(key)?"":" new"); feedSeen.add(key);
     const tm=document.createElement("time"); const d=new Date(it.t); tm.textContent=isNaN(d)?"":d.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit",second:"2-digit"});
-    const w=document.createElement("span"); w.className="who"; w.textContent=it.agent||"";
+    const w=document.createElement("span"); w.className="who"; const mem=byStation[it.agent]; w.textContent=mem?mem.name:(it.agent||""); w.title=it.agent||"";
     const m=document.createElement("span"); m.className="msg"; m.textContent=it.msg||"";
     li.append(tm,w,m); ul.append(li); });
 }
 setInterval(()=>{ if(!run.startedAt) return; const end=run.endedAt?new Date(run.endedAt):new Date(); const s=Math.max(0,Math.floor((end-new Date(run.startedAt))/1000));
   const h=Math.floor(s/3600), mm=String(Math.floor(s%3600/60)).padStart(2,"0"), ss=String(s%60).padStart(2,"0"); setText("elapsed",(h?h+":":"")+mm+":"+ss); },1000);
+
+/* ---------- Squad view ---------- */
+const KIND={lead:["var(--brand)","var(--brand-soft)"],intake:["var(--c-intake-s)","var(--c-intake-f)"],dev:["var(--c-dev-s)","var(--c-dev-f)"],test:["var(--c-test-s)","var(--c-test-f)"],review:["var(--c-review-s)","var(--c-review-f)"],scan:["var(--c-scan-s)","var(--c-scan-f)"],fix:["var(--c-fix-s)","var(--c-fix-f)"],ship:["var(--c-ship-s)","var(--c-ship-f)"],qa:["var(--c-qa-s)","var(--c-qa-f)"],human:["var(--c-human-s)","var(--c-human-f)"]};
+const STATION_NAME=Object.fromEntries(AGENTS.map(a=>[a.id,a.name])); STATION_NAME.orchestrator="Orchestrator";
+const SAY={pending:"Waiting for an earlier step",running:"Working",done:"Done",failed:"Needs attention",waiting:"Waiting on you",skipped:"Not needed this run"};
+const STATUS_ICON={done:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',failed:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round"><path d="M12 6v8M12 18h.01"/></svg>',waiting:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round"><path d="M12 6v8M12 18h.01"/></svg>'};
+let squad=[], engine="records", byStation={}, openId=null, lastFocus=null, chatCache={};
+
+function memberState(m){
+  if(!m.stations.length){ // squad lead: follows the run
+    const st=run.startedAt?(run.endedAt?"done":"running"):"pending";
+    return {status:st,progress:st==="done"?100:st==="running"?50:0,note:run.phase?("Phase: "+run.phase):"",per:[]};
+  }
+  const per=m.stations.map(id=>({id,...(state[id]||{status:"pending",progress:0,note:""})}));
+  const has=s=>per.some(p=>p.status===s);
+  let status="pending";
+  if(has("waiting")) status="waiting"; else if(has("failed")) status="failed"; else if(has("running")) status="running";
+  else if(per.every(p=>p.status==="skipped")) status="skipped";
+  else if(per.every(p=>p.status==="done"||p.status==="skipped")) status="done";
+  else if(has("done")) status="running";
+  const live=per.find(p=>p.status==="waiting"||p.status==="failed"||p.status==="running")||[...per].reverse().find(p=>p.note);
+  const progress=Math.round(per.reduce((t,p)=>t+(p.status==="done"||p.status==="skipped"?100:(p.progress||0)),0)/per.length);
+  return {status,progress,note:live?.note||"",station:live?.id,per};
+}
+function avatar(m,ms,size){
+  const [k,kf]=KIND[m.kind]||KIND.lead; const d=document.createElement("div");
+  d.className="av "+(size||"")+" "+ms.status; d.style.setProperty("--k",k); d.style.setProperty("--kf",kf); d.style.setProperty("--p",ms.status==="done"?100:ms.progress);
+  const b=document.createElement("b"); b.textContent=m.name==="You"?"You":m.name.slice(0,1); d.append(b);
+  const st=document.createElement("span"); st.className="st"; st.innerHTML=STATUS_ICON[ms.status]||""; st.setAttribute("aria-hidden","true"); d.append(st);
+  return d;
+}
+function ago(t){ if(!t) return ""; const s=Math.max(0,(Date.now()-new Date(t))/1000); if(s<60) return "just now"; if(s<3600) return Math.floor(s/60)+" min ago"; return Math.floor(s/3600)+" h ago"; }
+function lastFeed(m){ const ids=new Set(m.stations); if(!m.stations.length) ids.add("orchestrator"); const f=(window.__feed||[]).filter(x=>ids.has(x.agent)); return f[f.length-1]; }
+
+function renderSquad(){
+  if(!squad.length) return;
+  const roster=$("roster"); roster.innerHTML="";
+  const active=[], waiting=[];
+  squad.forEach(m=>{
+    const ms=memberState(m); const [k,kf]=KIND[m.kind]||KIND.lead;
+    const seat=document.createElement("button"); seat.type="button"; seat.className="seat "+ms.status; seat.style.setProperty("--k",k); seat.style.setProperty("--kf",kf);
+    seat.setAttribute("aria-label",m.name+", "+m.role+": "+(SAY[ms.status]||ms.status)+(ms.note?". "+ms.note:""));
+    seat.addEventListener("click",()=>openMember(m.id,seat));
+    const txt=document.createElement("div"); const nm=document.createElement("div"); nm.className="nm"; nm.textContent=m.name; const rl=document.createElement("div"); rl.className="rl"; rl.textContent=m.role; txt.append(nm,rl);
+    const now=document.createElement("div"); now.className="now"; const dot=document.createElement("i"); const sp=document.createElement("span");
+    sp.textContent=(ms.status==="pending"||ms.status==="skipped"||!ms.note)?(SAY[ms.status]||ms.status):ms.note; now.append(dot,sp);
+    seat.append(avatar(m,ms),txt,now); roster.append(seat);
+    if(m.id!=="alex"&&ms.status==="running") active.push([m,ms]);
+    if(ms.status==="waiting"||ms.status==="failed") waiting.push([m,ms]);
+  });
+  const list=$("stage-list"); list.innerHTML="";
+  const shown=waiting.concat(active);
+  $("stage-title").textContent=waiting.length&&!active.length?"Needs you now":"Working now";
+  if(!shown.length){
+    const p=document.createElement("p"); p.className="stage-empty";
+    p.textContent=run.endedAt?"This run is finished. Start the next story with /storyrail <issue>.":run.startedAt?"Between steps. Alex, the squad lead, is handing over the next task.":"The squad is waiting for a story. Start one with /storyrail <issue>.";
+    list.append(p);
+  }
+  shown.forEach(([m,ms])=>{
+    const row=document.createElement("div"); row.className="performer";
+    const body=document.createElement("div");
+    const who=document.createElement("div"); who.className="who"; who.textContent=m.name; const r=document.createElement("span"); r.textContent=m.role+(ms.station&&m.stations.length>1?", "+STATION_NAME[ms.station].toLowerCase():""); who.append(r);
+    const doing=document.createElement("p"); doing.className="doing"; doing.textContent=ms.note||SAY[ms.status];
+    const meta=document.createElement("div"); meta.className="meta";
+    const pr=document.createElement("span"); pr.textContent=(SAY[ms.status]||"")+(ms.status==="running"?" · "+ms.progress+"%":"");
+    const lf=lastFeed(m); const tm=document.createElement("span"); tm.textContent=lf?"last update "+ago(lf.t):"";
+    meta.append(pr,tm);
+    if(m.brief){ const b=document.createElement("button"); b.type="button"; b.className="stage-ask"; b.textContent="Ask "+m.name; b.addEventListener("click",()=>openMember(m.id,b,true)); meta.append(b); }
+    body.append(who,doing,meta); row.append(avatar(m,ms,"lg"),body); list.append(row);
+  });
+  if(openId) renderDrawer(false);
+}
+
+/* ---------- Member drawer and chat ---------- */
+const drawer=$("drawer"), scrim=$("scrim");
+async function openMember(id,from,focusAsk){
+  openId=id; lastFocus=from||document.activeElement; drawer.hidden=false; scrim.hidden=false;
+  await loadMember(id); renderDrawer(true);
+  const m=squad.find(x=>x.id===id);
+  (focusAsk&&m&&m.brief?$("d-q"):$("d-close")).focus();
+}
+function closeMember(){ openId=null; drawer.hidden=true; scrim.hidden=true; $("d-err").hidden=true; if(lastFocus&&lastFocus.isConnected) lastFocus.focus(); }
+$("d-close").addEventListener("click",closeMember); scrim.addEventListener("click",closeMember);
+document.addEventListener("keydown",e=>{
+  if(drawer.hidden) return;
+  if(e.key==="Escape"){ e.preventDefault(); closeMember(); return; }
+  if(e.key==="Tab"){ const f=[...drawer.querySelectorAll("button,a[href],textarea")].filter(x=>!x.disabled&&x.offsetParent!==null); if(!f.length) return;
+    const first=f[0], last=f[f.length-1]; if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();} else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();} }
+});
+async function loadMember(id){
+  try{ const r=await fetch("api/member?id="+encodeURIComponent(id),{cache:"no-store"}); if(r.ok) chatCache[id]=await r.json(); }catch(e){ /* server may be restarting; keep the last copy */ }
+}
+function renderDrawer(full){
+  const m=squad.find(x=>x.id===openId); if(!m) return; const ms=memberState(m); const data=chatCache[m.id]||{outputs:[],chat:[]};
+  const av=$("d-av"); av.replaceWith(Object.assign(avatar(m,ms,"xl"),{id:"d-av"}));
+  const h=$("d-name"); h.textContent=m.name; const sm=document.createElement("small"); sm.textContent=m.role+" · "+(SAY[ms.status]||ms.status); h.append(sm);
+  $("d-about").textContent=m.about||"";
+  const works=$("d-works"); works.innerHTML=""; ms.per.forEach(p=>{ const s=document.createElement("span"); s.className=p.status; s.textContent=STATION_NAME[p.id]+": "+(LABEL[p.status]||p.status); works.append(s); });
+  const rep=$("d-reports"); rep.innerHTML=""; rep.hidden=!data.outputs.length;
+  data.outputs.forEach(o=>{ const a=document.createElement("a"); a.href=o; a.target="_blank"; a.rel="noopener"; a.textContent=o.split("/").pop(); rep.append(a); });
+  const thread=$("d-thread"); const atBottom=thread.scrollHeight-thread.scrollTop-thread.clientHeight<40;
+  thread.innerHTML="";
+  const ids=new Set(m.stations); if(!m.stations.length) ids.add("orchestrator");
+  const items=(window.__feed||[]).filter(f=>ids.has(f.agent)).map(f=>({t:f.t,kind:"log",level:f.level,text:f.msg}))
+    .concat((data.chat||[]).map(c=>({t:c.t,kind:c.from==="you"?"you":"them",text:c.text})))
+    .sort((a,b)=>new Date(a.t)-new Date(b.t));
+  if(!items.length){ const p=document.createElement("p"); p.className="empty"; p.textContent=m.brief?m.name+" hasn’t reported anything in this run yet. You can still ask about how they work.":"This is you. The squad asks you at the merge, triage and sign-off gates."; thread.append(p); }
+  items.forEach(it=>{ const d=document.createElement("div"); d.className="bub "+it.kind+(it.level?" "+it.level:""); d.textContent=it.text; const tm=document.createElement("time"); tm.textContent=new Date(it.t).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}); d.append(tm); thread.append(d); });
+  if(asking===m.id){ const d=document.createElement("div"); d.className="bub thinking"; d.textContent=m.name+" is looking into it…"; thread.append(d); }
+  if(full||atBottom) thread.scrollTop=thread.scrollHeight;
+  const ask=$("d-ask"); ask.hidden=!m.brief;
+  $("d-q").placeholder="Ask "+m.name+" about their work…"; $("d-send").textContent="Ask "+m.name; $("d-send").disabled=!!asking;
+  $("d-engine").textContent=engine==="bob"?"Answers come from IBM Bob in ask mode, which can read the run but not change anything.":engine==="claude"?"Answers come from Claude Code with read-only tools.":"AI answers are off on this machine, so "+m.name+" answers from their status, log and reports.";
+}
+let asking=null;
+$("d-form").addEventListener("submit",async e=>{
+  e.preventDefault(); const q=$("d-q").value.trim(); const id=openId; if(!q||asking||!id) return;
+  asking=id; $("d-err").hidden=true; const data=chatCache[id]||(chatCache[id]={outputs:[],chat:[]});
+  data.chat=(data.chat||[]).concat({from:"you",text:q,t:new Date().toISOString()}); $("d-q").value=""; renderDrawer(true);
+  try{
+    const r=await fetch("api/ask",{method:"POST",headers:{"content-type":"application/json","x-storyrail":"1"},body:JSON.stringify({member:id,question:q})});
+    const body=await r.json().catch(()=>({}));
+    if(!r.ok) throw new Error(body.error||("The dashboard server answered "+r.status));
+    data.chat=body.chat;
+  }catch(err){ data.chat=data.chat.slice(0,-1); $("d-q").value=q; $("d-err").textContent=err.message||"Couldn’t reach the dashboard server."; $("d-err").hidden=false; }
+  finally{ asking=null; if(openId===id){ renderDrawer(true); $("d-q").focus(); } }
+});
+$("d-q").addEventListener("keydown",e=>{ if(e.key==="Enter"&&!e.shiftKey){ e.preventDefault(); $("d-form").requestSubmit(); } });
+$("d-q").addEventListener("input",e=>{ e.target.style.height="auto"; e.target.style.height=Math.min(140,e.target.scrollHeight)+"px"; });
+
+/* ---------- Tabs ---------- */
+function showTab(name,focus){
+  ["squad","flow"].forEach(t=>{ const on=t===name; $("tab-"+t).setAttribute("aria-selected",on); $("tab-"+t).tabIndex=on?0:-1; $("view-"+t).hidden=!on; });
+  if(focus) $("tab-"+name).focus();
+  if(name==="flow") requestAnimationFrame(drawWires);
+  try{ localStorage.setItem("storyrail.tab",name); }catch(e){ /* storage blocked: the tab just isn't remembered */ }
+}
+$("tab-squad").addEventListener("click",()=>showTab("squad")); $("tab-flow").addEventListener("click",()=>showTab("flow"));
+document.querySelector(".tabs").addEventListener("keydown",e=>{ if(e.key==="ArrowRight"||e.key==="ArrowLeft"){ e.preventDefault(); showTab($("tab-squad").getAttribute("aria-selected")==="true"?"flow":"squad",true); } });
+try{ if(localStorage.getItem("storyrail.tab")==="flow") showTab("flow"); }catch(e){ /* default view */ }
+
+fetch("squad.json",{cache:"no-store"}).then(r=>r.ok?r.json():null).then(d=>{ if(!d) return; squad=d.members||[]; engine=d.engine||"records";
+  squad.forEach(m=>m.stations.forEach(s=>byStation[s]=m)); byStation.orchestrator=squad.find(m=>m.id==="alex"); renderSquad(); }).catch(()=>{});
+setInterval(()=>{ if(!$("view-squad").hidden) renderSquad(); },15000);
 
 renderAgents();
 new ResizeObserver(()=>drawWires()).observe(flow);
@@ -365,7 +631,7 @@ if(document.fonts) document.fonts.ready.then(drawWires);
       const txt=await r.text(); fails=0; conn.className="chip live"; conn.textContent="live";
       if(txt===last) return; last=txt;
       const s=JSON.parse(txt||"{}");
-      state=s.agents||{}; run=s.run||{}; renderAgents(); renderRun(); renderFeed(s.feed||[]);
+      state=s.agents||{}; run=s.run||{}; window.__feed=s.feed||[]; renderAgents(); renderRun(); renderFeed(s.feed||[]); renderSquad();
     }catch(e){ if(++fails>2){ conn.className="chip"; conn.textContent="dashboard server stopped"; } }
   }
   tick(); setInterval(tick,1500);

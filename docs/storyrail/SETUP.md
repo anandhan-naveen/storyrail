@@ -89,6 +89,35 @@ Log in with your Claude account when the browser opens, and trust the folder whe
 
 Everything a run produces (spec, review and scan reports, QA log and screenshots) is committed in the hub under `runs/issue-<N>/`. The code goes to the project repos.
 
+## The dashboard: squad and chat
+
+The dashboard opens on the **Squad** view: every agent is a squad member with a name and a role (Priya the business
+analyst, Maya and Arjun the developers, Lena the strict reviewer, Nina the release engineer, …). Whoever is working
+right now is shown large at the top; anyone waiting for you is shown there too. The **Flow** tab has the rail diagram.
+
+**Rename the squad** in `storyrail.config.json` → `squad.members` (name, role, a one-line "about"). Restart the
+dashboard server to pick it up.
+
+### Ask a squad member
+
+Select a member to see their work as a timeline (status updates, reports they wrote) and ask them about it, e.g.
+"Which acceptance criteria have you covered?" or "Why did you flag R1-03?". They answer in role, from their records.
+
+| `STORYRAIL_ASK` | Who answers | Needs |
+|---|---|---|
+| `auto` (default) | Bob if it is set up, else Claude Code, else records | – |
+| `claude` | Claude Code in print mode, read-only tools | `claude` installed and logged in |
+| `bob` | IBM Bob Shell in **ask mode** (read-only) | `bob` installed and `BOB_API_KEY` set |
+| `records` | No AI: status, recent log and reports | – |
+
+```bash
+node scripts/storyrail-dashboard.mjs                       # auto
+STORYRAIL_ASK=records node scripts/storyrail-dashboard.mjs # never call an AI
+```
+
+The terminal prints which one is used. Answers can read the run but never change files, and the chat API only accepts
+requests from the dashboard page itself. Chats are kept per member in `.storyrail/chats/` (not committed).
+
 ## Good to know
 
 - **Usage limits.** A full story runs about ten agents and uses a lot of your plan's limit; on Pro a run may pause
@@ -97,6 +126,7 @@ Everything a run produces (spec, review and scan reports, QA log and screenshots
   Claude Code still asks before anything else, such as pushing or merging.
 - **Your computer must stay awake** during a run (System Settings → Battery/Lock Screen, or run `caffeinate -i` in another terminal).
 - **The dashboard** is local only (`127.0.0.1:4800`); it reads `.storyrail/status.json`, which is not committed.
+- **Chat cost.** Each question is one short AI call (a few seconds). Use `STORYRAIL_ASK=records` if you don't want any.
 
 ## Troubleshooting
 
