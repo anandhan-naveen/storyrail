@@ -121,6 +121,9 @@ The **Squad** tab shows every agent as a squad member with a name and a role (Si
 Meysam the developers, Priya the strict reviewer, Charlotte the release engineer, …), with whoever is working shown large
 at the top. The **Flow** tab has the rail diagram.
 
+The **Auto · Light · Dark** switch in the top bar sets the colour theme. Auto follows your system setting; Light or Dark
+overrides it and is remembered in that browser.
+
 **Rename the squad** in `storyrail.config.json` → `squad.members` (name, role, a one-line "about"). Restart the
 dashboard server to pick it up.
 
