@@ -244,6 +244,51 @@ svg.wires{position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-eve
 .ask .engine{margin:0;font-size:.78rem;color:var(--muted)}
 .ask .err{margin:0;font-size:.85rem;color:var(--bad)}
 @media (max-width:520px){.performer{grid-template-columns:1fr}.av.lg{--sz:60px}}
+/* ---------- Orchestration view ---------- */
+.orch{background:var(--canvas);border:1px solid var(--line);border-radius:16px;padding:18px 18px 14px;display:grid;gap:10px}
+.orch-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+.orch-head h2{font-family:var(--f-display);font-weight:800;font-size:1.05rem;margin:0}
+.orch-head p{margin:0;color:var(--muted);font-size:.88rem}
+.orch-now{margin:0;font-size:1rem;min-height:1.5em}
+.orch-now b{font-family:var(--f-display)}
+#orch{width:100%;height:auto;max-height:78vh;display:block;margin:0 auto;overflow:visible}
+#orch .ring{fill:none;stroke:var(--grid);stroke-width:2}
+#orch .arc{fill:none;stroke:var(--line);stroke-width:2.5}
+#orch .arc.lit{stroke:var(--brand)}
+#orch .arc.par{stroke-dasharray:3 6}
+#orch .arc-lab{font:600 13px var(--f-body);fill:var(--muted)}
+#orch .arc-lab.lit{fill:var(--ok)}
+#orch .spoke{stroke:var(--line);stroke-width:1.5;opacity:.55}
+#orch .spoke.done{stroke:var(--brand);opacity:.35}
+#orch .spoke.running{stroke:var(--k);stroke-width:3.5;opacity:1;stroke-dasharray:8 9;animation:flowout 0.9s linear infinite}
+#orch .spoke.waiting{stroke:var(--wait);stroke-width:3.5;opacity:1;stroke-dasharray:8 9;animation:flowout 1.4s linear infinite}
+#orch .spoke.failed{stroke:var(--bad);stroke-width:3;opacity:1}
+@keyframes flowout{to{stroke-dashoffset:-34}}
+#orch .node{cursor:pointer;outline:none}
+#orch .node .bg{fill:var(--kf);stroke:var(--k);stroke-width:2}
+#orch .node .trk{fill:none;stroke:color-mix(in srgb,var(--k) 20%,transparent);stroke-width:5}
+#orch .node .prog{fill:none;stroke:var(--k);stroke-width:5;stroke-linecap:round;transition:stroke-dashoffset .8s}
+#orch .node .ini{font:800 26px var(--f-display);fill:var(--k);text-anchor:middle;dominant-baseline:central}
+#orch .node .badge{fill:var(--line);stroke:var(--canvas);stroke-width:3}
+#orch .node.running .badge{fill:var(--run)} #orch .node.done .badge{fill:var(--ok)} #orch .node.waiting .badge{fill:var(--wait)} #orch .node.failed .badge{fill:var(--bad)}
+#orch .node.pending .bg,#orch .node.skipped .bg{opacity:.55}
+#orch .node .halo{fill:none;stroke:var(--k);stroke-width:2;opacity:0;transform-box:fill-box;transform-origin:center}
+#orch .node.running .halo,#orch .node.waiting .halo{animation:halo 1.8s ease-out infinite}
+#orch .node.waiting .halo{stroke:var(--wait)}
+@keyframes halo{0%{opacity:.6;transform:scale(.9)}100%{opacity:0;transform:scale(1.35)}}
+#orch .node:focus-visible .bg{stroke:var(--run);stroke-width:4}
+#orch .node:hover .bg{stroke-width:3}
+#orch .nm{font:800 17px var(--f-display);fill:var(--ink)}
+#orch .rl{font:500 13px var(--f-body);fill:var(--muted)}
+#orch .node.pending .nm{fill:var(--muted)}
+#orch .hub .core{fill:var(--brand-deep)}
+#orch .hub .hprog{fill:none;stroke:var(--brand);stroke-width:6;stroke-linecap:round;transition:stroke-dashoffset .8s}
+#orch .hub .htrk{fill:none;stroke:var(--brand-soft);stroke-width:6}
+#orch .hub .hname{font:800 30px var(--f-display);fill:#fff;text-anchor:middle}
+#orch .hub .hrole{font:600 14px var(--f-body);fill:rgba(255,255,255,.8);text-anchor:middle}
+#orch .hub .hphase{font:700 15px var(--f-body);fill:#9ff0cd;text-anchor:middle}
+#orch .po .bg{stroke-dasharray:5 4}
+@media (max-width:700px){#orch .rl,#orch .arc-lab{display:none}#orch .nm{font-size:26px}}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -279,6 +324,7 @@ svg.wires{position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-eve
 
   <div class="tabs" role="tablist" aria-label="Dashboard view">
     <button role="tab" id="tab-squad" aria-controls="view-squad" aria-selected="true">Squad</button>
+    <button role="tab" id="tab-orch" aria-controls="view-orch" aria-selected="false" tabindex="-1">Orchestration</button>
     <button role="tab" id="tab-flow" aria-controls="view-flow" aria-selected="false" tabindex="-1">Flow</button>
   </div>
 
@@ -292,6 +338,15 @@ svg.wires{position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-eve
       <p>In rail order. Select someone to see their work and ask them about it.</p>
     </div>
     <div class="roster" id="roster"></div>
+  </section>
+
+  <section class="orch" id="view-orch" role="tabpanel" aria-labelledby="tab-orch" hidden>
+    <div class="orch-head">
+      <h2>How the squad lead hands out the work</h2>
+      <p>The lit spoke is the hand-off happening now. Select anyone to see their work.</p>
+    </div>
+    <p class="orch-now" id="orch-now" aria-live="polite"></p>
+    <svg id="orch" viewBox="0 0 1000 790" role="group" aria-label="Squad lead in the centre, squad members around, in rail order"></svg>
   </section>
 
   <section class="board" id="view-flow" role="tabpanel" aria-labelledby="tab-flow" aria-label="Delivery flow" hidden>
@@ -544,6 +599,7 @@ function renderSquad(){
     body.append(who,doing,meta); row.append(avatar(m,ms,"lg"),body); list.append(row);
   });
   if(openId) renderDrawer(false);
+  if(!$("view-orch").hidden) renderOrch();
 }
 
 /* ---------- Member drawer and chat ---------- */
@@ -603,16 +659,124 @@ $("d-form").addEventListener("submit",async e=>{
 $("d-q").addEventListener("keydown",e=>{ if(e.key==="Enter"&&!e.shiftKey){ e.preventDefault(); $("d-form").requestSubmit(); } });
 $("d-q").addEventListener("input",e=>{ e.target.style.height="auto"; e.target.style.height=Math.min(140,e.target.scrollHeight)+"px"; });
 
+/* ---------- Orchestration view: squad lead in the hub, members on the ring ---------- */
+const NS="http://www.w3.org/2000/svg";
+const O={cx:500,cy:395,R:270,r:38,hub:92};
+// Hand-off labels between ring neighbours, keyed "from>to"; "par" = the two work side by side.
+const HANDOFF={"start":"Story picked","req-fetch>fe-dev":"Spec + contract","fe-dev>be-dev":"par","be-dev>ui-tests":"Code + unit tests","ui-tests>api-tests":"par",
+  "api-tests>reviewer":"Tests green","reviewer>gate":"par","gate>fixer":"Findings","fixer>cicd":"Review approved","cicd>manual-tests":"Deployed to QA","end":"Ready for sign-off"};
+let orchBuilt=false, orchNodes={}, orchSpokes={}, orchArcs=[];
+function svgEl(tag,attrs,parent){ const e=document.createElementNS(NS,tag); for(const k in attrs) e.setAttribute(k,attrs[k]); if(parent) parent.append(e); return e; }
+function polar(deg,rad){ const a=deg*Math.PI/180; return [O.cx+rad*Math.cos(a), O.cy+rad*Math.sin(a)]; }
+function ringMembers(){
+  const lead=squad.find(m=>m.kind==="lead"), po=squad.find(m=>m.kind==="human");
+  const ring=squad.filter(m=>m!==lead&&m!==po);
+  return {lead,po,ring};
+}
+function buildOrch(){
+  const svg=$("orch"); if(!svg||!squad.length) return; svg.innerHTML="";
+  const {lead,po,ring}=ringMembers(); const slots=[po,...ring]; const n=slots.length; const step=360/n;
+  svg.append(svgEl("defs",{}));
+  svg.querySelector("defs").innerHTML='<marker id="o-arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="context-stroke"/></marker>';
+  svgEl("circle",{class:"ring",cx:O.cx,cy:O.cy,r:O.R},svg);
+  const angle=i=>-90+i*step;
+  // spokes first (under everything)
+  const spokes=svgEl("g",{},svg);
+  slots.forEach((m,i)=>{ const a=angle(i); const [x1,y1]=polar(a,O.hub+6), [x2,y2]=polar(a,O.R-O.r-8);
+    orchSpokes[m.id]=svgEl("line",{class:"spoke",x1,y1,x2,y2},spokes); });
+  // hand-off arcs between neighbours, with labels inside the ring
+  orchArcs=[];
+  const delta=Math.asin((O.r+12)/O.R)*180/Math.PI;
+  slots.forEach((m,i)=>{ const next=slots[(i+1)%n];
+    const key=i===0?"start":(i===n-1?"end":(m.stations[m.stations.length-1]+">"+next.stations[0]));
+    const lab=HANDOFF[key]; const a1=angle(i)+delta, a2=angle(i+1)-delta;
+    const [x1,y1]=polar(a1,O.R), [x2,y2]=polar(a2,O.R);
+    const par=lab==="par";
+    const path=svgEl("path",{class:"arc"+(par?" par":""),d:`M${x1},${y1} A${O.R},${O.R} 0 0 1 ${x2},${y2}`,"marker-end":par?"":"url(#o-arr)"},svg);
+    let text=null;
+    if(lab&&!par){ const mid=(angle(i)+angle(i+1))/2; const [lx,ly]=polar(mid,O.R-74);
+      text=svgEl("text",{class:"arc-lab",x:lx,y:ly,"text-anchor":"middle","dominant-baseline":"middle"},svg); text.textContent=lab; }
+    orchArcs.push({path,text,target:next,start:i===0,end:i===n-1});
+  });
+  // hub: the squad lead
+  const hub=svgEl("g",{class:"hub node",tabindex:"0",role:"button"},svg); orchNodes[lead.id]={g:hub,m:lead};
+  svgEl("circle",{class:"htrk",cx:O.cx,cy:O.cy,r:O.hub},hub);
+  const C=2*Math.PI*O.hub; svgEl("circle",{class:"hprog",cx:O.cx,cy:O.cy,r:O.hub,"stroke-dasharray":C,"stroke-dashoffset":C,transform:`rotate(-90 ${O.cx} ${O.cy})`},hub);
+  svgEl("circle",{class:"core",cx:O.cx,cy:O.cy,r:O.hub-8},hub);
+  const hn=svgEl("text",{class:"hname",x:O.cx,y:O.cy-10},hub); hn.textContent=lead.name;
+  const hr=svgEl("text",{class:"hrole",x:O.cx,y:O.cy+14},hub); hr.textContent=lead.role;
+  svgEl("text",{class:"hphase",x:O.cx,y:O.cy+38},hub);
+  // members on the ring (the product owner sits at the top, where a story starts and ends)
+  slots.forEach((m,i)=>{
+    const a=angle(i); const [x,y]=polar(a,O.R); const [k,kf]=KIND[m.kind]||KIND.lead;
+    const g=svgEl("g",{class:"node"+(m.kind==="human"?" po":""),tabindex:"0",role:"button",style:`--k:${k};--kf:${kf}`},svg);
+    svgEl("circle",{class:"halo",cx:x,cy:y,r:O.r+10},g);
+    svgEl("circle",{class:"trk",cx:x,cy:y,r:O.r+7},g);
+    const c=2*Math.PI*(O.r+7); svgEl("circle",{class:"prog",cx:x,cy:y,r:O.r+7,"stroke-dasharray":c,"stroke-dashoffset":c,transform:`rotate(-90 ${x} ${y})`},g);
+    svgEl("circle",{class:"bg",cx:x,cy:y,r:O.r},g);
+    const ini=svgEl("text",{class:"ini",x,y},g); ini.textContent=m.name.slice(0,1).toUpperCase();
+    svgEl("circle",{class:"badge",cx:x+O.r*.72,cy:y+O.r*.72,r:9},g);
+    // name + role outside the ring
+    const cos=Math.cos(a*Math.PI/180), sin=Math.sin(a*Math.PI/180);
+    const [tx,ty]=polar(a,O.R+O.r+22); const anchor=Math.abs(cos)<.3?"middle":(cos>0?"start":"end");
+    const dy=Math.abs(cos)<.3?(sin<0?-20:14):-4;
+    const nm=svgEl("text",{class:"nm",x:tx,y:ty+dy,"text-anchor":anchor},g); nm.textContent=m.name;
+    const rl=svgEl("text",{class:"rl",x:tx,y:ty+dy+18,"text-anchor":anchor},g); rl.textContent=m.role;
+    orchNodes[m.id]={g,m};
+  });
+  Object.values(orchNodes).forEach(({g,m})=>{
+    g.addEventListener("click",()=>openMember(m.id,g));
+    g.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); openMember(m.id,g); } });
+  });
+  orchBuilt=true;
+}
+function renderOrch(){
+  if(!squad.length) return; if(!orchBuilt) buildOrch(); if(!orchBuilt) return;
+  const {lead,po}=ringMembers(); const now=[];
+  Object.values(orchNodes).forEach(({g,m})=>{
+    const ms=memberState(m);
+    if(m===lead){
+      g.setAttribute("class","hub node "+ms.status);
+      const done=AGENTS.filter(a=>!a.human&&(state[a.id]||{}).status==="done").length, tot=AGENTS.filter(a=>!a.human).length;
+      const c=g.querySelector(".hprog"); const C=2*Math.PI*O.hub; c.setAttribute("stroke-dashoffset",C*(1-done/tot));
+      g.querySelector(".hphase").textContent=run.endedAt?"Story signed off":run.phase?("Phase: "+run.phase):"Waiting for a story";
+      g.setAttribute("aria-label",m.name+", "+m.role+". "+(run.phase?"Phase "+run.phase:"No story running"));
+      return;
+    }
+    // the product owner is "waiting" whenever the squad waits on a decision
+    const anyWaiting=Object.values(state).some(s=>s&&s.status==="waiting");
+    const st=m===po&&anyWaiting?"waiting":ms.status;
+    g.setAttribute("class","node "+st+(m===po?" po":""));
+    const c=g.querySelector(".prog"); const C=2*Math.PI*(O.r+7); c.setAttribute("stroke-dashoffset",C*(1-(st==="done"?100:ms.progress)/100));
+    g.setAttribute("aria-label",m.name+", "+m.role+": "+(SAY[st]||st)+(ms.note?". "+ms.note:""));
+    const sp=orchSpokes[m.id]; sp.setAttribute("class","spoke "+st); sp.style.setProperty("--k",(KIND[m.kind]||KIND.lead)[0]);
+    if(st==="running"||st==="waiting"||st==="failed") now.push([m,ms,st]);
+  });
+  orchArcs.forEach(a=>{
+    const t=memberState(a.target);
+    const lit=a.start?!!run.startedAt:a.end?((state.signoff||{}).status&&state.signoff.status!=="pending"):(t.status!=="pending"&&t.status!=="skipped");
+    a.path.classList.toggle("lit",!!lit); if(a.text) a.text.classList.toggle("lit",!!lit);
+  });
+  const box=$("orch-now"); box.textContent="";
+  if(!now.length){ box.textContent=run.endedAt?"The story is signed off.":run.startedAt?lead.name+" is handing over the next task.":"Waiting for a story."; return; }
+  const end=t=>/[.?!]$/.test(t)?t:t+".";
+  now.sort((a,b)=>(a[0]===po)-(b[0]===po)).forEach(([m,ms,st],i)=>{ if(i) box.append("   "); const b=document.createElement("b"); b.textContent=m.name; box.append(b,
+    m===po?" has a decision to make.":st==="waiting"?end(" is waiting for "+po.name+(ms.note?": "+ms.note:"")):st==="failed"?end(" needs attention"+(ms.note?": "+ms.note:"")):(ms.note?": "+ms.note:" is working")+(ms.progress?" ("+ms.progress+"%)":"")+"."); });
+}
+
 /* ---------- Tabs ---------- */
+const TABS=["squad","orch","flow"];
 function showTab(name,focus){
-  ["squad","flow"].forEach(t=>{ const on=t===name; $("tab-"+t).setAttribute("aria-selected",on); $("tab-"+t).tabIndex=on?0:-1; $("view-"+t).hidden=!on; });
+  TABS.forEach(t=>{ const on=t===name; $("tab-"+t).setAttribute("aria-selected",on); $("tab-"+t).tabIndex=on?0:-1; $("view-"+t).hidden=!on; });
   if(focus) $("tab-"+name).focus();
   if(name==="flow") requestAnimationFrame(drawWires);
+  if(name==="orch") renderOrch();
   try{ localStorage.setItem("storyrail.tab",name); }catch(e){ /* storage blocked: the tab just isn't remembered */ }
 }
-$("tab-squad").addEventListener("click",()=>showTab("squad")); $("tab-flow").addEventListener("click",()=>showTab("flow"));
-document.querySelector(".tabs").addEventListener("keydown",e=>{ if(e.key==="ArrowRight"||e.key==="ArrowLeft"){ e.preventDefault(); showTab($("tab-squad").getAttribute("aria-selected")==="true"?"flow":"squad",true); } });
-try{ if(localStorage.getItem("storyrail.tab")==="flow") showTab("flow"); }catch(e){ /* default view */ }
+TABS.forEach(t=>$("tab-"+t).addEventListener("click",()=>showTab(t)));
+document.querySelector(".tabs").addEventListener("keydown",e=>{ if(e.key!=="ArrowRight"&&e.key!=="ArrowLeft") return; e.preventDefault();
+  const cur=TABS.findIndex(t=>$("tab-"+t).getAttribute("aria-selected")==="true"); showTab(TABS[(cur+(e.key==="ArrowRight"?1:TABS.length-1))%TABS.length],true); });
+try{ const t=localStorage.getItem("storyrail.tab"); if(TABS.includes(t)&&t!=="squad") showTab(t); }catch(e){ /* default view */ }
 
 fetch("squad.json",{cache:"no-store"}).then(r=>r.ok?r.json():null).then(d=>{ if(!d) return; squad=d.members||[]; engine=d.engine||"records";
   squad.forEach(m=>m.stations.forEach(s=>byStation[s]=m)); byStation.orchestrator=squad.find(m=>m.kind==="lead"); renderSquad(); }).catch(()=>{});
