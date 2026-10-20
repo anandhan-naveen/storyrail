@@ -13,6 +13,8 @@ yourself with `/storyrail <issue number>` in the Bob chat.
 | `.bob/rules-<mode>/01-brief.md` | The full brief of one mode (what to do, gates, what to report). |
 | `.bob/commands/storyrail.md` | The `/storyrail` command: switches to the orchestrator mode and passes your arguments. |
 | `.bobignore` | Files Bob must never read (`.env`, keys). |
+| `.bob/rules/02-house-standards.md` | Your company's design-system and backend coding standards. Off until switched on in `storyrail.config.json`; see "Office setup" below. |
+| `.bob/mcp.example.json` | Template for the Figma (and optional Storybook) MCP servers; copy it to `.bob/mcp.json`. |
 
 ## 1. One-time setup
 
@@ -84,6 +86,43 @@ StoryRail runs many small steps, so approve the routine ones and keep the risky 
 
 Whatever you allow, the orchestrator still **stops and asks you** before merging, at sign-off and when requirements are
 unclear. Never approve `git push --force`, `git reset --hard` or anything that deletes outside the repo.
+
+## Office setup: design system and reference app
+
+Two optional additions make the developers work the way your squad does. Both are **off** until you switch them on, and
+`node scripts/storyrail-workspace.mjs todo` lists every `TODO(office)` placeholder still to fill in.
+
+> Keep office code off public repos. The component library, Figma files and reference app stay on your internal GitLab;
+> point `storyrail.config.json` at GitLab projects before the first office run.
+
+**Frontend: screens from the Storybook components, through the Figma MCP server**
+
+1. MCP server: copy `.bob/mcp.example.json` to `.bob/mcp.json` (git-ignored) and set your Figma-to-code server, or add it
+   in Bob's MCP settings. Check Bob's MCP docs for the exact file and fields of your Bob version. The name must match
+   `designSystem.figmaMcpServer` (default `figma`). Add a Storybook server only if your Storybook exposes MCP.
+2. In `storyrail.config.json` → `designSystem`: set `package` (the npm package of the component library) and
+   `storybookUrl`, then `enabled: true`. `figmaRequired: true` makes requirement fetch ask when a story has no Figma link.
+3. In `.bob/rules/02-house-standards.md`, frontend part: name the package and your styling/token rules.
+4. library-frontend must install the package: add it to `package.json`, an `.npmrc` for your internal registry, and the
+   registry token as a CI variable (never in the repo).
+5. Stories get a Figma link in the **Design (Figma)** field of the user story template.
+
+What changes then: requirement fetch puts the Figma links in a `## Design` section of the spec; the frontend developer
+(`sr-fe-dev`, now allowed to use MCP) reads each frame, maps every element to a library component, lists that map and any
+missing component in its summary, and builds with library components only; the strict reviewer flags hand-built or
+look-alike components as major findings.
+
+**Backend: follow an existing application and your coding standards**
+
+1. In `storyrail.config.json` → `references.backend`: set `repo` and `cloneUrl` (internal GitLab), `branch`, then
+   `enabled: true`. `node scripts/storyrail-workspace.mjs sync` clones it read-only into `references/backend` (git-ignored);
+   no mode may edit it.
+2. In `.bob/rules/02-house-standards.md`, backend part: replace the `TODO(office)` lines with your real standards
+   (package layout, naming, mapping, error model, logging, transactions, tests, what is banned). A short written list is
+   followed far more reliably than patterns the agent has to infer from a large codebase.
+
+What changes then: the backend developer finds the counterpart of every class it writes in the reference app, mirrors
+it, and lists `new class → reference class` in its summary; the reviewer checks the standards and cites them.
 
 ## 2. Each story
 

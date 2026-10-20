@@ -30,6 +30,26 @@
       "$comment": "Cucumber + Java acceptance tests for the backend. Part of the backend lane; a story branch here runs against the backend branch with the same name."
     }
   },
+  "designSystem": {
+    "$comment": "The company component library the frontend must build screens from. Set enabled to true once the TODO(office) values are filled in; the rules in .bob/rules-sr-fe-dev/02-design-system.md then apply.",
+    "enabled": false,
+    "package": "TODO(office): npm package of the component library, e.g. @your-org/ui-components",
+    "storybookUrl": "TODO(office): URL of the Storybook that documents it",
+    "figmaMcpServer": "figma",
+    "storybookMcpServer": null,
+    "figmaRequired": true
+  },
+  "references": {
+    "$comment": "Existing applications the developers copy patterns from. Cloned read-only into references/ by `node scripts/storyrail-workspace.mjs sync`; no mode may edit them. Keep them on your internal GitLab, never in a public repo.",
+    "backend": {
+      "enabled": false,
+      "repo": "TODO(office): group/reference-backend",
+      "cloneUrl": "TODO(office): https://gitlab.<company>/group/reference-backend.git",
+      "branch": "main",
+      "path": "references/backend",
+      "standards": ".bob/rules/02-house-standards.md"
+    }
+  },
   "squad": {
     "$comment": "The squad as shown on the dashboard. Rename people freely; stations are the status ids each member reports on; brief = the agent's file name (sr-*) or 'orchestrator'.",
     "members": [

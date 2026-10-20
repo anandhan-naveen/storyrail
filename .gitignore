@@ -10,3 +10,9 @@ node_modules/
 
 # Project repos StoryRail works on (cloned by scripts/storyrail-workspace.mjs)
 projects/
+
+# Read-only reference applications (cloned by scripts/storyrail-workspace.mjs)
+references/
+
+# Local MCP setup (copied from .bob/mcp.example.json; may hold machine-specific values)
+.bob/mcp.json

@@ -1,0 +1,18 @@
+{
+  "_comment": "Copy to .bob/mcp.json (or add these servers in Bob's MCP settings) and adjust to what your company provides. Check Bob's documentation for the exact file location and fields of your Bob version. The server names must match designSystem.figmaMcpServer / storybookMcpServer in storyrail.config.json. Never put tokens in this file: use environment variables.",
+  "mcpServers": {
+    "figma": {
+      "_comment": "TODO(office): your Figma-to-code MCP server. Example: Figma's Dev Mode MCP server, served locally by the Figma desktop app when enabled in its preferences.",
+      "type": "streamable-http",
+      "url": "http://127.0.0.1:3845/mcp",
+      "alwaysAllow": [],
+      "disabled": false
+    },
+    "storybook": {
+      "_comment": "TODO(office): optional. Only if your Storybook exposes an MCP endpoint (for example through an MCP addon). Otherwise remove this entry and leave designSystem.storybookMcpServer null.",
+      "type": "streamable-http",
+      "url": "http://localhost:6006/mcp",
+      "disabled": true
+    }
+  }
+}

@@ -39,6 +39,7 @@ customModes:
     groups:
       - read
       - execute
+      - mcp
       - - edit
         - fileRegex: "^projects/frontend/(?!tests/|contract/).*"
           description: "library-frontend app code only (not its tests or contract)"
@@ -87,6 +88,7 @@ customModes:
     groups:
       - read
       - execute
+      - mcp
   - slug: sr-scan
     name: "StoryRail · Local quality scan"
     description: "StoryRail local quality scan. Runs lint, Sonar-class rules, SAST, secret and dependency scans on the local workspace and reports findings (does not fix them)."

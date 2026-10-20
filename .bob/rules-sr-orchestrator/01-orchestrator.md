@@ -40,10 +40,13 @@ Two ways to hand over a stage, both returning a summary to you:
   the mode (`story` / `bug`), round number `k`, the QA URL and expected bundle, and the earlier stage's summary when it
   matters (e.g. the frontend dev's new test ids for UI automation).
 - **Subtask message** starts with: "Follow your brief in `.bob/rules-<slug>/`."
-- **Subagent message** starts with: "You are the StoryRail <role> (station `<station>`). Read
-  `.bob/rules/01-project-guide.md` and `.bob/rules-<slug>/01-brief.md` first and follow them exactly. You may change files
+- **Subagent message** starts with: "You are the StoryRail <role> (station `<station>`). Read every file in
+  `.bob/rules/` and in `.bob/rules-<slug>/` first (in file-name order) and follow them exactly. You may change files
   only in: <the agent's lane from `node scripts/storyrail-lanes.mjs lanes`>. Anything outside it: stop and say so in your
   summary. End with the completion summary your brief asks for, including the list of files you changed."
+- **Design system on** (`designSystem.enabled` in `storyrail.config.json`): the frontend developer needs the Figma MCP
+  tools, which only its own mode is granted. If your subagents can't call MCP tools, run the frontend developer as a
+  **subtask in `sr-fe-dev`** (the backend developer can still run beside it as a subagent, or after it as a subtask).
 - **Lane check** around every parallel stage (`lanes clean` / `lanes check …` below are short for `node scripts/storyrail-lanes.mjs …`):
   1. Before starting it: `node scripts/storyrail-lanes.mjs clean` (the previous stage is committed, so nothing is pending).
   2. After both subagents return, **before** you save or commit anything: `node scripts/storyrail-lanes.mjs check <agents>`
