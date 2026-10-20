@@ -29,5 +29,168 @@
       "contract": "contract/openapi.yaml",
       "$comment": "Cucumber + Java acceptance tests for the backend. Part of the backend lane; a story branch here runs against the backend branch with the same name."
     }
+  },
+  "squad": {
+    "$comment": "The squad as shown on the dashboard. Rename people freely; stations are the status ids each member reports on; brief = the agent's file name (sr-*) or 'orchestrator'.",
+    "members": [
+      {
+        "id": "alex",
+        "name": "Alex",
+        "role": "Squad lead",
+        "kind": "lead",
+        "stations": [],
+        "brief": "orchestrator",
+        "about": "Runs the rail: hands each stage to the right person, checks every gate and asks you when a decision is yours."
+      },
+      {
+        "id": "priya",
+        "name": "Priya",
+        "role": "Business analyst",
+        "kind": "intake",
+        "stations": [
+          "req-fetch"
+        ],
+        "brief": "sr-req-fetch",
+        "about": "Reads the backlog issue, makes every acceptance criterion testable and agrees the API contract."
+      },
+      {
+        "id": "maya",
+        "name": "Maya",
+        "role": "Frontend developer",
+        "kind": "dev",
+        "stations": [
+          "fe-dev"
+        ],
+        "brief": "sr-fe-dev",
+        "about": "Builds the React screens with unit tests in library-frontend."
+      },
+      {
+        "id": "arjun",
+        "name": "Arjun",
+        "role": "Backend developer",
+        "kind": "dev",
+        "stations": [
+          "be-dev"
+        ],
+        "brief": "sr-be-dev",
+        "about": "Builds the Spring Boot API with unit tests in library-backend."
+      },
+      {
+        "id": "sofia",
+        "name": "Sofia",
+        "role": "UI test engineer",
+        "kind": "test",
+        "stations": [
+          "ui-tests"
+        ],
+        "brief": "sr-ui-tests",
+        "about": "Automates the screens with Playwright against a local build with a mocked API."
+      },
+      {
+        "id": "kenji",
+        "name": "Kenji",
+        "role": "API test engineer",
+        "kind": "test",
+        "stations": [
+          "api-tests"
+        ],
+        "brief": "sr-api-tests",
+        "about": "Writes the Cucumber + Java acceptance scenarios for the API in library-api-tests."
+      },
+      {
+        "id": "lena",
+        "name": "Lena",
+        "role": "Tech lead, strict reviewer",
+        "kind": "review",
+        "stations": [
+          "reviewer"
+        ],
+        "brief": "sr-reviewer",
+        "about": "Reviews every change against the acceptance criteria, the contract and the conventions. Read-only."
+      },
+      {
+        "id": "omar",
+        "name": "Omar",
+        "role": "Quality engineer",
+        "kind": "scan",
+        "stations": [
+          "gate"
+        ],
+        "brief": "sr-scan",
+        "about": "Runs lint, Sonar-class rules, SAST, secret and dependency scans before anything is pushed."
+      },
+      {
+        "id": "jonas",
+        "name": "Jonas",
+        "role": "Developer, review fixes",
+        "kind": "fix",
+        "stations": [
+          "fixer"
+        ],
+        "brief": "sr-fixer",
+        "about": "Fixes every review and scan finding in one pass, with regression tests."
+      },
+      {
+        "id": "nina",
+        "name": "Nina",
+        "role": "Release engineer",
+        "kind": "ship",
+        "stations": [
+          "cicd",
+          "smoke",
+          "qa-api"
+        ],
+        "brief": "orchestrator",
+        "about": "Opens the PRs, watches the pipelines, deploys to QA, and runs the smoke test and the API acceptance run on QA."
+      },
+      {
+        "id": "tom",
+        "name": "Tom",
+        "role": "QA tester",
+        "kind": "qa",
+        "stations": [
+          "manual-tests"
+        ],
+        "brief": "sr-manual-qa",
+        "about": "Tests the deployed QA site like a user would and logs defects."
+      },
+      {
+        "id": "you",
+        "name": "You",
+        "role": "Product owner",
+        "kind": "human",
+        "stations": [
+          "signoff"
+        ],
+        "brief": null,
+        "about": "Picks the issue, answers questions, approves the merge and signs off the story."
+      }
+    ],
+    "outputs": {
+      "req-fetch": [
+        "spec.md"
+      ],
+      "ui-tests": [
+        "ui-findings.md"
+      ],
+      "api-tests": [
+        "api-findings.md"
+      ],
+      "reviewer": [
+        "review-round*.md"
+      ],
+      "gate": [
+        "scan-round*.md"
+      ],
+      "fixer": [
+        "response-round*.md"
+      ],
+      "manual-tests": [
+        "qa-charter.md",
+        "qa-cases.md",
+        "qa-log.md",
+        "qa-retest.md"
+      ]
+    }
   }
 }

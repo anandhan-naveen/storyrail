@@ -110,6 +110,35 @@ Run **one story or bug at a time**: the dashboard and your working folder follow
 
 Everything a run produces (spec, review and scan reports, QA log and screenshots) is committed in the hub under `runs/issue-<N>/`. The code goes to the project repos.
 
+## The dashboard: squad and chat
+
+The dashboard opens on the **Squad** view: every agent is a squad member with a name and a role (Priya the business
+analyst, Maya and Arjun the developers, Lena the strict reviewer, Nina the release engineer, …). Whoever is working
+right now is shown large at the top; anyone waiting for you is shown there too. The **Flow** tab has the rail diagram.
+
+**Rename the squad** in `storyrail.config.json` → `squad.members` (name, role, a one-line "about"). Restart the
+dashboard server to pick it up.
+
+### Ask a squad member
+
+Select a member to see their work as a timeline (status updates, reports they wrote) and ask them about it, e.g.
+"Which acceptance criteria have you covered?" or "Why did you flag R1-03?". They answer in role, from their records.
+
+| `STORYRAIL_ASK` | Who answers | Needs |
+|---|---|---|
+| `auto` (default) | Bob if it is set up, else records | – |
+| `bob` | IBM Bob Shell in **ask mode** (`bob run --mode ask`, read-only) | Bob Shell installed and `BOB_API_KEY` set (ask your Bob admin) |
+| `records` | No AI: status, recent log and reports | – |
+
+```bash
+export BOB_API_KEY=…                                         # once per terminal, from your Bob admin
+node scripts/storyrail-dashboard.mjs                         # auto
+STORYRAIL_ASK=records node scripts/storyrail-dashboard.mjs   # never call Bob
+```
+
+The terminal prints which one is used. Answers can read the run but never change files, and the chat API only accepts
+requests from the dashboard page itself. Chats are kept per member in `.storyrail/chats/` (not committed).
+
 ## Good to know
 
 - **Parallel stages.** Build (frontend ∥ backend), isolated tests (UI ∥ API) and review ∥ scan run **at the same time**
@@ -122,6 +151,7 @@ Everything a run produces (spec, review and scan reports, QA log and screenshots
 - **Cost.** A full story runs about ten modes. Small, focused stories go much further than big ones.
 - **Your computer must stay awake** during a run (System Settings → Battery/Lock Screen, or run `caffeinate -i` in another terminal).
 - **The dashboard** is local only (`127.0.0.1:4800`); it reads `.storyrail/status.json`, which is not committed.
+- **Chat cost.** Each question is one short Bob call (a few seconds). Use `STORYRAIL_ASK=records` if you don't want any.
 - **Corporate network.** npm, Maven and Playwright's browser download must reach your internal registry or proxy
   (e.g. `npm config set registry …`, Maven `settings.xml` mirror, `PLAYWRIGHT_DOWNLOAD_HOST`).
 
