@@ -304,7 +304,15 @@ svg.wires{position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-eve
 #orch .hub .hrole{font:600 14px var(--f-body);fill:rgba(255,255,255,.8);text-anchor:middle}
 #orch .hub .hphase{font:700 13px var(--f-body);fill:#9ff0cd;text-anchor:middle}
 #orch .po .bg{stroke-dasharray:5 4}
-@media (max-width:700px){#orch .rl,#orch .arc-lab{display:none}#orch .nm{font-size:26px}}
+@media (max-width:700px){
+  .orch{padding:14px 10px 10px}
+  #orch{max-height:none}
+  #orch .rl,#orch .arc-lab{display:none}
+  #orch .nm{font-size:22px;paint-order:stroke;stroke:var(--canvas);stroke-width:6px;stroke-linejoin:round}
+  #orch .node .ini{font-size:36px}
+  #orch .hub .hname{font-size:38px} #orch .hub .hrole{font-size:19px} #orch .hub .hphase{font-size:17px}
+  #orch .round text{font-size:17px}
+}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -685,6 +693,15 @@ $("d-q").addEventListener("input",e=>{ e.target.style.height="auto"; e.target.st
 /* ---------- Orchestration view: squad lead in the hub, members on the ring ---------- */
 const NS="http://www.w3.org/2000/svg";
 const O={cx:500,cy:395,R:270,r:38,hub:92};
+// Phones get a tighter ring: bigger nodes, names under the nodes, and a viewBox cropped to the ring.
+const ORCH_SMALL=matchMedia("(max-width:700px)");
+function orchGeometry(){
+  const small=ORCH_SMALL.matches;
+  Object.assign(O,small?{R:262,r:44,hub:100}:{R:270,r:38,hub:92});
+  const svg=$("orch"); if(svg) svg.setAttribute("viewBox",small?"176 64 648 680":"0 0 1000 790");
+  return small;
+}
+ORCH_SMALL.addEventListener("change",()=>{ orchBuilt=false; if(!$("view-orch").hidden) renderOrch(); });
 // Hand-off labels between ring neighbours, keyed "from>to"; "par" = the two work side by side.
 const HANDOFF={"start":"Story picked","req-fetch>fe-dev":"Spec + contract","fe-dev>be-dev":"par","be-dev>ui-tests":"Code + unit tests","ui-tests>api-tests":"par",
   "api-tests>reviewer":"Tests green","reviewer>gate":"par","gate>fixer":"two:Findings ⇄ fixes","fixer>cicd":"Approved","cicd>manual-tests":"Deployed to QA","end":"Ready for sign-off"};
@@ -697,7 +714,8 @@ function ringMembers(){
   return {lead,po,ring};
 }
 function buildOrch(){
-  const svg=$("orch"); if(!svg||!squad.length) return; svg.innerHTML="";
+  const svg=$("orch"); if(!svg||!squad.length) return; svg.innerHTML=""; orchNodes={}; orchSpokes={};
+  const small=orchGeometry();
   const {lead,po,ring}=ringMembers(); const slots=[po,...ring]; const n=slots.length; const step=360/n;
   svg.append(svgEl("defs",{}));
   svg.querySelector("defs").innerHTML='<marker id="o-arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="context-stroke"/></marker>';
@@ -742,12 +760,13 @@ function buildOrch(){
     const ini=svgEl("text",{class:"ini",x,y},g); ini.textContent=m.name.slice(0,1).toUpperCase();
     svgEl("circle",{class:"badge",cx:x+O.r*.72,cy:y+O.r*.72,r:9},g);
     if(m.stations.some(st=>st==="reviewer"||st==="gate")){ const rt=svgEl("g",{class:"round"},g);
-      const px=x-8, py=y+O.r+6; // on the lower rim of the node, clear of the arrows and labels
-      svgEl("rect",{x:px-32,y:py-11,width:64,height:22,rx:11},rt); svgEl("text",{x:px,y:py},rt); }
+      const [ix,iy]=polar(a,O.R-O.r-8); const px=small?ix:x-8, py=small?iy:y+O.r+6; // lower rim; on phones the inner rim, as the name is below
+      const rw=small?84:64, rh=small?28:22; svgEl("rect",{x:px-rw/2,y:py-rh/2,width:rw,height:rh,rx:rh/2},rt); svgEl("text",{x:px,y:py},rt); }
     // name + role outside the ring
     const cos=Math.cos(a*Math.PI/180), sin=Math.sin(a*Math.PI/180);
-    const [tx,ty]=polar(a,O.R+O.r+22); const anchor=Math.abs(cos)<.3?"middle":(cos>0?"start":"end");
-    const dy=Math.abs(cos)<.3?(sin<0?-20:14):-4;
+    let [tx,ty]=polar(a,O.R+O.r+22); let anchor=Math.abs(cos)<.3?"middle":(cos>0?"start":"end");
+    let dy=Math.abs(cos)<.3?(sin<0?-20:14):-4;
+    if(small){ tx=x; ty=y+O.r+27; anchor="middle"; dy=0; } // phones: the name sits right under the node
     const nm=svgEl("text",{class:"nm",x:tx,y:ty+dy,"text-anchor":anchor},g); nm.textContent=m.name;
     const rl=svgEl("text",{class:"rl",x:tx,y:ty+dy+18,"text-anchor":anchor},g); rl.textContent=m.role;
     orchNodes[m.id]={g,m};
@@ -772,7 +791,7 @@ function renderOrch(){
       g.setAttribute("class","hub node "+ms.status);
       const done=AGENTS.filter(a=>!a.human&&(state[a.id]||{}).status==="done").length, tot=AGENTS.filter(a=>!a.human).length;
       const c=g.querySelector(".hprog"); const C=2*Math.PI*O.hub; c.setAttribute("stroke-dashoffset",C*(1-done/tot));
-      g.querySelector(".hphase").textContent=run.endedAt?"Story signed off":run.phase?("Phase: "+run.phase):"Waiting for a story";
+      g.querySelector(".hphase").textContent=run.endedAt?"Story signed off":run.phase?((ORCH_SMALL.matches?"":"Phase: ")+run.phase):"Waiting for a story";
       g.setAttribute("aria-label",m.name+", "+m.role+". "+(run.phase?"Phase "+run.phase:"No story running"));
       return;
     }
