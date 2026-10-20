@@ -534,7 +534,7 @@ function renderSquad(){
   shown.forEach(([m,ms])=>{
     const row=document.createElement("div"); row.className="performer";
     const body=document.createElement("div");
-    const who=document.createElement("div"); who.className="who"; who.textContent=m.name; const r=document.createElement("span"); r.textContent=m.role+(ms.station&&m.stations.length>1?", "+STATION_NAME[ms.station].toLowerCase():""); who.append(r);
+    const who=document.createElement("div"); who.className="who"; who.textContent=m.name; const r=document.createElement("span"); r.textContent=m.role+(ms.station&&m.stations.length>1?", "+STATION_NAME[ms.station]:""); who.append(r);
     const doing=document.createElement("p"); doing.className="doing"; doing.textContent=ms.note||SAY[ms.status];
     const meta=document.createElement("div"); meta.className="meta";
     const pr=document.createElement("span"); pr.textContent=(SAY[ms.status]||"")+(ms.status==="running"?" · "+ms.progress+"%":"");
