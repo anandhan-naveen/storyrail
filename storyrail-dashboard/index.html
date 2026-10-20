@@ -585,7 +585,7 @@ function renderDrawer(full){
   if(full||atBottom) thread.scrollTop=thread.scrollHeight;
   const ask=$("d-ask"); ask.hidden=!m.brief;
   $("d-q").placeholder="Ask "+m.name+" about their work…"; $("d-send").textContent="Ask "+m.name; $("d-send").disabled=!!asking;
-  $("d-engine").textContent=engine==="bob"?"Answers come from IBM Bob in ask mode, which can read the run but not change anything.":engine==="claude"?"Answers come from Claude Code with read-only tools.":"AI answers are off on this machine, so "+m.name+" answers from their status, log and reports.";
+  $("d-engine").textContent=engine==="bob"?"Answers come from IBM Bob in ask mode, which can read the run but not change anything.":"AI answers are off on this machine, so "+m.name+" answers from their status, log and reports.";
 }
 let asking=null;
 $("d-form").addEventListener("submit",async e=>{
