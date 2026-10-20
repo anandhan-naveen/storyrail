@@ -500,7 +500,7 @@ function memberState(m){
 function avatar(m,ms,size){
   const [k,kf]=KIND[m.kind]||KIND.lead; const d=document.createElement("div");
   d.className="av "+(size||"")+" "+ms.status; d.style.setProperty("--k",k); d.style.setProperty("--kf",kf); d.style.setProperty("--p",ms.status==="done"?100:ms.progress);
-  const b=document.createElement("b"); b.textContent=m.name==="You"?"You":m.name.slice(0,1); d.append(b);
+  const b=document.createElement("b"); b.textContent=m.name.slice(0,1).toUpperCase(); d.append(b);
   const st=document.createElement("span"); st.className="st"; st.innerHTML=STATUS_ICON[ms.status]||""; st.setAttribute("aria-hidden","true"); d.append(st);
   return d;
 }
@@ -520,7 +520,7 @@ function renderSquad(){
     const now=document.createElement("div"); now.className="now"; const dot=document.createElement("i"); const sp=document.createElement("span");
     sp.textContent=(ms.status==="pending"||ms.status==="skipped"||!ms.note)?(SAY[ms.status]||ms.status):ms.note; now.append(dot,sp);
     seat.append(avatar(m,ms),txt,now); roster.append(seat);
-    if(m.id!=="alex"&&ms.status==="running") active.push([m,ms]);
+    if(m.kind!=="lead"&&ms.status==="running") active.push([m,ms]);
     if(ms.status==="waiting"||ms.status==="failed") waiting.push([m,ms]);
   });
   const list=$("stage-list"); list.innerHTML="";
@@ -528,7 +528,7 @@ function renderSquad(){
   $("stage-title").textContent=waiting.length&&!active.length?"Needs you now":"Working now";
   if(!shown.length){
     const p=document.createElement("p"); p.className="stage-empty";
-    p.textContent=run.endedAt?"This run is finished. Start the next story with /storyrail <issue>.":run.startedAt?"Between steps. Alex, the squad lead, is handing over the next task.":"The squad is waiting for a story. Start one with /storyrail <issue>.";
+    p.textContent=run.endedAt?"This run is finished. Start the next story with /storyrail <issue>.":run.startedAt?"Between steps. "+((squad.find(x=>x.kind==="lead")||{}).name||"The squad lead")+", the squad lead, is handing over the next task.":"The squad is waiting for a story. Start one with /storyrail <issue>.";
     list.append(p);
   }
   shown.forEach(([m,ms])=>{
@@ -579,13 +579,13 @@ function renderDrawer(full){
   const items=(window.__feed||[]).filter(f=>ids.has(f.agent)).map(f=>({t:f.t,kind:"log",level:f.level,text:f.msg}))
     .concat((data.chat||[]).map(c=>({t:c.t,kind:c.from==="you"?"you":"them",text:c.text})))
     .sort((a,b)=>new Date(a.t)-new Date(b.t));
-  if(!items.length){ const p=document.createElement("p"); p.className="empty"; p.textContent=m.brief?m.name+" hasn’t reported anything in this run yet. You can still ask about how they work.":"This is you. The squad asks you at the merge, triage and sign-off gates."; thread.append(p); }
+  if(!items.length){ const p=document.createElement("p"); p.className="empty"; p.textContent=m.brief?m.name+" hasn’t reported anything in this run yet. You can still ask about how they work.":m.name+" is the product owner. The squad asks them at the merge, triage and sign-off gates."; thread.append(p); }
   items.forEach(it=>{ const d=document.createElement("div"); d.className="bub "+it.kind+(it.level?" "+it.level:""); d.textContent=it.text; const tm=document.createElement("time"); tm.textContent=new Date(it.t).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}); d.append(tm); thread.append(d); });
   if(asking===m.id){ const d=document.createElement("div"); d.className="bub thinking"; d.textContent=m.name+" is looking into it…"; thread.append(d); }
   if(full||atBottom) thread.scrollTop=thread.scrollHeight;
   const ask=$("d-ask"); ask.hidden=!m.brief;
   $("d-q").placeholder="Ask "+m.name+" about their work…"; $("d-send").textContent="Ask "+m.name; $("d-send").disabled=!!asking;
-  $("d-engine").textContent=engine==="bob"?"Answers come from IBM Bob in ask mode, which can read the run but not change anything.":"AI answers are off on this machine, so "+m.name+" answers from their status, log and reports.";
+  $("d-engine").textContent=engine==="bob"?"Answers come from IBM Bob in ask mode, which can read the run but not change anything.":engine==="claude"?"Answers come from Claude Code with read-only tools.":"AI answers are off on this machine, so "+m.name+" answers from their status, log and reports.";
 }
 let asking=null;
 $("d-form").addEventListener("submit",async e=>{
@@ -615,7 +615,7 @@ document.querySelector(".tabs").addEventListener("keydown",e=>{ if(e.key==="Arro
 try{ if(localStorage.getItem("storyrail.tab")==="flow") showTab("flow"); }catch(e){ /* default view */ }
 
 fetch("squad.json",{cache:"no-store"}).then(r=>r.ok?r.json():null).then(d=>{ if(!d) return; squad=d.members||[]; engine=d.engine||"records";
-  squad.forEach(m=>m.stations.forEach(s=>byStation[s]=m)); byStation.orchestrator=squad.find(m=>m.id==="alex"); renderSquad(); }).catch(()=>{});
+  squad.forEach(m=>m.stations.forEach(s=>byStation[s]=m)); byStation.orchestrator=squad.find(m=>m.kind==="lead"); renderSquad(); }).catch(()=>{});
 setInterval(()=>{ if(!$("view-squad").hidden) renderSquad(); },15000);
 
 renderAgents();
