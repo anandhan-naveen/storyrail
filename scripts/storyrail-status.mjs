@@ -9,7 +9,7 @@
 //   node scripts/storyrail-status.mjs run <key> <value...>             e.g. run phase "Build"
 //   node scripts/storyrail-status.mjs loop <bug issues>                 defect loop inside a story run: resets fetch→QA stations, keeps the run
 //   node scripts/storyrail-status.mjs metric <unit-fe|unit-be|api|ui> <passed> <total>
-//   node scripts/storyrail-status.mjs findings <blocker> <major> <minor> <fixed>
+//   node scripts/storyrail-status.mjs findings <blocker> <major> <minor> <fixed>   (blocker/major/minor = still open; fixed = fixed so far)
 //   node scripts/storyrail-status.mjs security <high-critical vulns> <lint warnings>
 //   node scripts/storyrail-status.mjs end
 //   node scripts/storyrail-status.mjs show
