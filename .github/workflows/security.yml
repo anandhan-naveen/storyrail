@@ -27,7 +27,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: [javascript-typescript, java-kotlin]
+        language: [javascript-typescript]
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
@@ -42,24 +42,6 @@ jobs:
       - uses: github/codeql-action/analyze@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
         with:
           category: /language:${{ matrix.language }}
-
-  dependency-review:
-    name: Dependency review
-    if: ${{ github.event_name == 'pull_request' }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    permissions:
-      contents: read
-      pull-requests: write
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-        with:
-          persist-credentials: false
-
-      - uses: actions/dependency-review-action@2031cfc080254a8a887f58cffee85186f0e49e48 # v4.9.0
-        with:
-          fail-on-severity: high
-          comment-summary-in-pr: on-failure
 
   gitleaks:
     name: Secret scan (gitleaks)
@@ -103,8 +85,7 @@ jobs:
       - name: Scan
         run: |
           semgrep scan --metrics off --disable-version-check \
-            --config p/default --config p/owasp-top-ten --config p/java --config p/typescript \
-            --config p/react --config p/secrets --config p/github-actions --config p/dockerfile \
+            --config p/default --config p/javascript --config p/secrets --config p/github-actions \
             --config .semgrep/ \
             --sarif --output semgrep.sarif
           errors=$(jq '[.runs[].results[] | select(.level == "error")] | length' semgrep.sarif)
@@ -145,56 +126,3 @@ jobs:
 
       - name: zizmor
         run: zizmor --offline --min-severity low .github/workflows
-
-  sonarcloud:
-    name: SonarCloud (optional)
-    runs-on: ubuntu-latest
-    timeout-minutes: 25
-    env:
-      # Secrets can't be used in a job-level `if`; every step is gated on this env var instead.
-      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-    steps:
-      - name: Skip notice
-        if: ${{ env.SONAR_TOKEN == '' }}
-        run: echo "::notice::SONAR_TOKEN secret is not set; skipping SonarCloud analysis."
-
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-        if: ${{ env.SONAR_TOKEN != '' }}
-        with:
-          persist-credentials: false
-          fetch-depth: 0 # Sonar needs history for blame and new-code detection
-
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        if: ${{ env.SONAR_TOKEN != '' }}
-        with:
-          node-version: "22"
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
-
-      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
-        if: ${{ env.SONAR_TOKEN != '' }}
-        with:
-          distribution: temurin
-          java-version: "21"
-          cache: maven
-          cache-dependency-path: backend/pom.xml
-
-      - name: Frontend coverage (lcov)
-        if: ${{ env.SONAR_TOKEN != '' }}
-        working-directory: frontend
-        run: |
-          npm ci
-          npm run test:coverage
-
-      - name: Backend coverage (JaCoCo XML) and classes
-        if: ${{ env.SONAR_TOKEN != '' }}
-        working-directory: backend
-        run: mvn -B -ntp verify
-
-      - name: SonarCloud scan
-        if: ${{ env.SONAR_TOKEN != '' }}
-        uses: SonarSource/sonarqube-scan-action@2f77a1ec69fb1d595b06f35ab27e97605bdef703 # v5.3.2
-        with:
-          args: >
-            -Dsonar.organization=${{ github.repository_owner }}
-            -Dsonar.projectKey=${{ github.repository_owner }}_${{ github.event.repository.name }}

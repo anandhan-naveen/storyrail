@@ -1,7 +1,7 @@
 # Manual QA re-test log: 2026-10-17 (QA environment, D9 and D10)
 
 **Tester:** Manual QA agent (station `manual-tests`)
-**Target:** https://anandhan-naveen.github.io/agent-factory-demo/ in demo mode, after the deploy of `ce64130` ("fix(frontend): QA defects #38 and #39 (#42)") and a passing smoke test.
+**Target:** https://storyrail-squad.github.io/agent-factory-demo/ in demo mode, after the deploy of `ce64130` ("fix(frontend): QA defects #38 and #39 (#42)") and a passing smoke test.
 **New build confirmed:** the page loads `assets/index-Ctmk463V.js` and `assets/index-D9CCzHyc.css`. The earlier run used `index-DqIRSBPt.js`. The new copy ("Your search is too long…") and the `html.has-toast` / `--toast-space` behaviour are both present. Every browser context was new and had its storage cleared, which works like a hard reload.
 **Browser:** headless Chromium 141 (Playwright 1.56.1, `/opt/pw-browsers`), DPR 1. Throwaway driver scripts were kept in the scratchpad and not committed. I inspected every screenshot by eye.
 **Scope:** a targeted re-test of D9 (#38) and D10 (#39), plus regression around the change. The full 22-case suite was not re-run.

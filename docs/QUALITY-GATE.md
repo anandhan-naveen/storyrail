@@ -1,6 +1,8 @@
 # Quality gate
 
-Last run: 2026-10-14 (station `gate`). Each row says where the check runs permanently.
+Last run: 2026-10-14 (station `gate`), **before the frontend and backend moved to their own repos**
+([library-frontend](https://github.com/storyrail-squad/library-frontend), [library-backend](https://github.com/storyrail-squad/library-backend)).
+Paths below are the old monorepo paths; the checks now run in each project repo's `ci-cd.yml` and `security.yml`.
 
 ## Results
 

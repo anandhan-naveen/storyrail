@@ -4,6 +4,7 @@
     "allow": [
       "Bash(node scripts/storyrail-status.mjs:*)",
       "Bash(node scripts/storyrail-dashboard.mjs:*)",
+      "Bash(node scripts/storyrail-workspace.mjs:*)",
       "Bash(npm ci:*)",
       "Bash(npm run:*)",
       "Bash(npm audit:*)",
@@ -33,7 +34,8 @@
       "Bash(gitleaks:*)",
       "Bash(osv-scanner:*)",
       "Bash(curl -fs:*)",
-      "Bash(lsof:*)"
+      "Bash(lsof:*)",
+      "Bash(diff:*)"
     ],
     "deny": [
       "Bash(git push --force:*)",
