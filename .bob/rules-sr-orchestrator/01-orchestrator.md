@@ -15,8 +15,14 @@ Stage definitions and gates: [docs/storyrail/PIPELINE.md](../../docs/storyrail/P
 
 ## How to hand work to a mode
 
-Every stage runs as a **subtask** in the stage's mode (`new_task` with the mode slug from the table). The subtask gets its
-own conversation, keeps that mode's file limits, and its completion summary comes back to you.
+Two ways to hand over a stage, both returning a summary to you:
+
+- **Subtask** in the stage's mode (`new_task` with the mode slug from the table): its own visible conversation, and the
+  mode's file limits (`fileRegex`) are enforced by Bob. Used for single-agent stages: requirement fetch, fixer, manual QA.
+- **Parallel subagents** for the stages with two independent agents: **Build** (FE ∥ BE), **Isolated tests** (UI ∥ API)
+  and **Review + scan** (reviewer ∥ scan). Start both as `general` subagents **at the same time** (one message, two
+  spawns). A `general` subagent has full tools and does not get the mode's file limits, so the **lane check** below is
+  what keeps it in its lane.
 
 | Stage | Mode slug | Station id |
 |---|---|---|
@@ -30,15 +36,26 @@ own conversation, keeps that mode's file limits, and its completion summary come
 | Review fixer | `sr-fixer` | `fixer` |
 | Manual QA | `sr-manual-qa` | `manual-tests` |
 
-- A subtask sees **nothing** of this conversation. Its message must contain everything it needs: `N`, the run folder,
+- A subtask or subagent sees **nothing** of this conversation (don't use `fork_context`). Its message must contain everything it needs: `N`, the run folder,
   the mode (`story` / `bug`), round number `k`, the QA URL and expected bundle, and the earlier stage's summary when it
-  matters (e.g. the frontend dev's new test ids for UI automation). Start each message with
-  "Follow your brief in `.bob/rules-<slug>/`."
-- **Parallel stages** (FE ∥ BE, UI tests ∥ API tests, reviewer ∥ scan) run one after the other as subtasks: frontend
-  before backend, reviewer before scan. The dashboard still shows them side by side.
-- Optional speed-up for **reviewer ∥ scan only**: if this session allows subagents, you may start both as `general`
-  subagents at the same time, each told to follow its brief exactly. They only write reports. Never use subagents for
-  stages that change code (devs, tests, fixer): those must run in their own mode so the file limits apply.
+  matters (e.g. the frontend dev's new test ids for UI automation).
+- **Subtask message** starts with: "Follow your brief in `.bob/rules-<slug>/`."
+- **Subagent message** starts with: "You are the StoryRail <role> (station `<station>`). Read
+  `.bob/rules/01-project-guide.md` and `.bob/rules-<slug>/01-brief.md` first and follow them exactly. You may change files
+  only in: <the agent's lane from `node scripts/storyrail-lanes.mjs lanes`>. Anything outside it: stop and say so in your
+  summary. End with the completion summary your brief asks for, including the list of files you changed."
+- **Lane check** around every parallel stage (`lanes clean` / `lanes check …` below are short for `node scripts/storyrail-lanes.mjs …`):
+  1. Before starting it: `node scripts/storyrail-lanes.mjs clean` (the previous stage is committed, so nothing is pending).
+  2. After both subagents return, **before** you save or commit anything: `node scripts/storyrail-lanes.mjs check <agents>`
+     with the agents that ran (`fe-dev be-dev`, `ui-tests api-tests`, or `reviewer scan`).
+  3. It fails → list the files outside the lanes, discard those changes (`(cd <repo> && git restore --staged --worktree -- <file>)`,
+     or delete an untracked file), and send that agent back once, as a subtask in its own mode, with the exact files.
+     A second failure → stop and **ASK**.
+  4. Also compare each subagent's "files changed" list with its lane: the check can't tell which of two agents changed a
+     file, only that it is inside one of their lanes.
+- **Fallback:** if this session doesn't allow subagents (Subagent permission refused or `subagent` group missing), run the
+  same stage as two subtasks one after the other (frontend before backend, UI before API, reviewer before scan).
+- The dashboard shows parallel stages side by side either way; each agent reports its own station.
 
 ## Where things are
 
@@ -76,13 +93,13 @@ Read `storyrail.config.json` once (`node scripts/storyrail-workspace.mjs config`
 Gate: `runs/issue-N/spec.md` exists. If it lists **Open questions** → **ASK** the user, post their answers on the issue (`gh issue comment <n> -R $BACKLOG --body …`), re-run sr-req-fetch.
 Then, for each repo in the run: `(cd DIR_L && git switch -c story/N-<slug>)`. Use the **same branch name in every repo**: the API tests' CI runs against the backend branch with the same name. If the contract changed, commit it in each repo now (`feat: API contract for #N`, backend first). Commit the spec in the hub.
 
-**2. Build.** `run phase Build`. Subtask **sr-fe-dev**, then **sr-be-dev** (only the lanes needed; mark an unneeded lane and its test station `skipped 0 "not in this story"`).
+**2. Build.** `run phase Build`. `lanes clean`, then **sr-fe-dev** ∥ **sr-be-dev** as parallel subagents, then `lanes check fe-dev be-dev` (only the lanes needed; with one lane, run it as a subtask in its mode; mark an unneeded lane and its test station `skipped 0 "not in this story"`).
 Gate: each dev's commands green. Commit in each project.
 
-**3. Isolated tests.** `run phase "Isolated tests"`. Subtask **sr-ui-tests** (if fe), then **sr-api-tests** (if be).
+**3. Isolated tests.** `run phase "Isolated tests"`. `lanes clean`, then **sr-ui-tests** (if fe) ∥ **sr-api-tests** (if be) as parallel subagents, then `lanes check ui-tests api-tests` (one lane → a subtask in its mode). UI and API tests use ports 4173 and 8080, so they don't collide.
 Gate: green except documented `test.fail()` findings (UI) or `@wip`-tagged findings (API). Product bugs → send to that lane's dev once, then re-run the test mode. Commit in each repo (the API scenarios go to `projects/api-tests`).
 
-**4. Review + scan, round k (start k=1).** `run phase "Review + scan"`. Subtask **sr-reviewer** (the diff of each repo in the run, `main...HEAD`), then **sr-scan** (round k, the run's lanes). **Every round**, save the reviewer's summary as `runs/issue-N/review-round<k>.md`.
+**4. Review + scan, round k (start k=1).** `run phase "Review + scan"`. `lanes clean`, then **sr-reviewer** (the diff of each repo in the run, `main...HEAD`) ∥ **sr-scan** (round k, the run's lanes) as parallel subagents, then `lanes check reviewer scan` (the reviewer may change nothing; the scan only writes its report). **Every round**, save the reviewer's summary as `runs/issue-N/review-round<k>.md`.
 Then `findings <blocker> <major> <minor> <fixed-so-far>` (both reports combined).
 
 **5. Fix.** `run phase Fix`. If both reports are already clean (no findings at all) → `set fixer skipped 0 "nothing to fix"`. Otherwise subtask **sr-fixer** with k, update `findings … <fixed>`, commit in each changed repo, and go back to step 4 with k+1.

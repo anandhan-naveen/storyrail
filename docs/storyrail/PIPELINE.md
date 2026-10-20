@@ -17,7 +17,7 @@ Every run starts at **requirement fetch**: you give it an issue number (`/storyr
 
 ## Terms
 
-- **∥ (side by side).** The two stages don't depend on each other. In IBM Bob each stage runs as a subtask in its own mode, one after the other (frontend before backend, reviewer before scan); the dashboard still shows them side by side.
+- **∥ (side by side).** The two stages don't depend on each other, so in IBM Bob they run **at the same time as two subagents**. A subagent doesn't get its mode's file limits, so a lane check (`scripts/storyrail-lanes.mjs`) runs before and after: any file changed outside the agents' lanes fails the stage. Single-agent stages (requirement fetch, fixer, manual QA) run as subtasks in their own mode, where Bob enforces the limits itself.
 - **CI/CD vs deploy.** CI/CD is the whole automated pipeline (build, test, scan, package, deploy). Deploy is its last step. Writing the pipeline files is one-time setup, not a per-story stage.
 - **Smoke vs manual QA.** Smoke: a few automated checks right after a deploy (site up, app loads, health endpoint). It answers "is this build alive?" Manual QA: deeper, exploratory testing of the acceptance criteria and UX on the QA environment. It only starts once smoke passes.
 - **Isolated UI automation.** Playwright against a local build with a mocked API, so failures point at the frontend alone.

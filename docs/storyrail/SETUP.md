@@ -8,6 +8,7 @@ yourself with `/storyrail <issue number>` in the Bob chat.
 | File | What it does |
 |---|---|
 | `.bob/custom_modes.yaml` | The 10 StoryRail modes (orchestrator + 9 agents). Each mode may only **edit** its own folders (`fileRegex`), e.g. the frontend dev only `projects/frontend/` app code, so "stay in your lane" is enforced, not just asked. The reviewer has no edit rights at all. |
+| `scripts/storyrail-lanes.mjs` | The same lanes as a check for the parallel stages, which run as subagents: `lanes` lists them, `check <agents>` fails on any file changed outside them. |
 | `.bob/rules/01-project-guide.md` | Project conventions, loaded in every mode. |
 | `.bob/rules-<mode>/01-brief.md` | The full brief of one mode (what to do, gates, what to report). |
 | `.bob/commands/storyrail.md` | The `/storyrail` command: switches to the orchestrator mode and passes your arguments. |
@@ -78,7 +79,7 @@ StoryRail runs many small steps, so approve the routine ones and keep the risky 
 | Todo | auto-approve | Progress list |
 | Subtask | auto-approve | The orchestrator hands each stage to its mode |
 | Mode | auto-approve | `/storyrail` switches to the orchestrator mode |
-| Subagent | ask (optional auto) | Only used to run reviewer ∥ scan at the same time |
+| Subagent | auto-approve | Runs the parallel stages (FE ∥ BE, UI ∥ API, reviewer ∥ scan); the lane check guards them |
 | Execute | **ask** at first | Look at what it runs during your first story; auto-approve once you trust it |
 
 Whatever you allow, the orchestrator still **stops and asks you** before merging, at sign-off and when requirements are
@@ -111,10 +112,13 @@ Everything a run produces (spec, review and scan reports, QA log and screenshots
 
 ## Good to know
 
-- **One stage at a time.** Each stage runs as a Bob subtask in its own mode, so stages that could run side by side
-  (frontend ∥ backend, reviewer ∥ scan) run one after the other. That is slower, but every mode keeps its edit limits.
-- **Subtasks are visible.** Each stage opens its own conversation in Bob. You can watch it, but let it finish: the
-  orchestrator continues when the subtask completes.
+- **Parallel stages.** Build (frontend ∥ backend), isolated tests (UI ∥ API) and review ∥ scan run **at the same time**
+  as two Bob subagents. Subagents don't get their mode's file limits, so `scripts/storyrail-lanes.mjs` checks every
+  changed file afterwards: anything outside the agents' lanes fails the stage and goes back to that agent. Single-agent
+  stages (requirement fetch, fixer, manual QA) run as subtasks in their own mode. If subagents aren't allowed in your
+  Bob setup, the orchestrator runs the parallel stages one after the other instead.
+- **What you see in Bob.** Single-agent stages open their own subtask conversation; let it finish and the orchestrator
+  continues. Parallel stages appear as one collapsible subagent panel with both agents, their tool calls and cost.
 - **Cost.** A full story runs about ten modes. Small, focused stories go much further than big ones.
 - **Your computer must stay awake** during a run (System Settings → Battery/Lock Screen, or run `caffeinate -i` in another terminal).
 - **The dashboard** is local only (`127.0.0.1:4800`); it reads `.storyrail/status.json`, which is not committed.
