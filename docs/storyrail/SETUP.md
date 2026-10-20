@@ -91,9 +91,14 @@ Everything a run produces (spec, review and scan reports, QA log and screenshots
 
 ## The dashboard: squad and chat
 
-The dashboard opens on the **Squad** view: every agent is a squad member with a name and a role (Sindhu the business
-analyst, Varunesh and Meysam the developers, Priya the strict reviewer, Charlotte the release engineer, …). Whoever is working
-right now is shown large at the top; anyone waiting for you is shown there too. The **Flow** tab has the rail diagram.
+The dashboard opens on the **Orchestration** view: Naveen, the squad lead, in the centre and the squad around him in
+the order a story moves, with Laurence (product owner) at the top. The spoke to whoever is working lights up, a waiting
+hand-off glows amber, and the review loop is drawn out: Sandrine's fixes go back to Priya and Subramanian, whose approval
+goes straight to Charlotte. The line above the diagram says what each active member is doing, one line per member.
+
+The **Squad** tab shows every agent as a squad member with a name and a role (Sindhu the business analyst, Varunesh and
+Meysam the developers, Priya the strict reviewer, Charlotte the release engineer, …), with whoever is working shown large
+at the top. The **Flow** tab has the rail diagram.
 
 **Rename the squad** in `storyrail.config.json` → `squad.members` (name, role, a one-line "about"). Restart the
 dashboard server to pick it up.
