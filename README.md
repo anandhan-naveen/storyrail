@@ -7,14 +7,15 @@ to a signed-off release, with a human gate at both ends and a quality gate at ev
 The product it builds for the demo is a small **Library Catalog** (browse, search, filter, add, delete and toggle the
 availability of books), made of a frontend and a backend that live in **separate repos and deploy separately**.
 
-## The four repos
+## The five repos
 
 | Repo | What | Deploys to |
 |---|---|---|
 | [squad-backlog](https://github.com/storyrail-squad/squad-backlog) | The squad's user stories and bugs, nothing else | – |
 | **storyrail** (this repo) | The hub: agents, `/storyrail` command, live dashboard, every run's reports | – |
 | [library-frontend](https://github.com/storyrail-squad/library-frontend) | React app + UI automation, own CI/CD | [GitHub Pages (QA)](https://storyrail-squad.github.io/library-frontend/) |
-| [library-backend](https://github.com/storyrail-squad/library-backend) | Spring Boot API + API automation, **owns the API contract**, own CI/CD | Render (QA) |
+| [library-backend](https://github.com/storyrail-squad/library-backend) | Spring Boot API, **owns the API contract**, own CI/CD | Render (QA) |
+| [library-api-tests](https://github.com/storyrail-squad/library-api-tests) | Backend acceptance tests in Cucumber + Java: run isolated on every backend PR, and `@qa` against the QA API after each deploy | – |
 
 StoryRail runs from this repo. `node scripts/storyrail-workspace.mjs sync` clones the two projects into `projects/`
 (not committed here), and the agents work across them: a story that touches both gets a branch and a PR in each repo,
@@ -27,11 +28,11 @@ contract. All repo names live in [`storyrail.config.json`](storyrail.config.json
 |---|---|---|
 | 1 | Requirements | You run `/storyrail <issue>` → **Requirement fetch** agent reads that backlog issue (user story or bug) |
 | 2 | Build | **Frontend dev** (library-frontend) ∥ **Backend dev** (library-backend), each with unit tests |
-| 3 | Isolated tests | **Isolated UI automation** (after FE) ∥ **API automation** (after BE) |
+| 3 | Isolated tests | **Isolated UI automation** (after FE) ∥ **API automation**, Cucumber + Java in library-api-tests (after BE) |
 | 4 | Review + local scan | **Strict reviewer** (read-only) ∥ **Local quality scan** (Sonar rules, SAST, secrets, dependencies) |
 | 5 | Fix | **Review fixer** fixes both reports in one pass; re-check, max 2 rounds |
-| 6 | CI/CD → QA | One PR per project; each repo's pipeline re-runs every check and deploys its own part to QA (backend first) |
-| 7 | QA environment | **Smoke test** per project → **Manual QA** on the deployed QA URL |
+| 6 | CI/CD → QA | One PR per touched repo; each pipeline re-runs every check and deploys its own part to QA (backend, then API tests, then frontend) |
+| 7 | QA environment | **Smoke test** per project → **API acceptance** (`@qa` Cucumber scenarios on the QA API) → **Manual QA** on the deployed QA URL |
 | 8 | Sign-off | **You** accept the story for UAT / production |
 
 Defects found in QA go through a shorter **defect loop** (bug issue in the backlog → fix in the affected project only →
@@ -47,7 +48,7 @@ the dashboard and your working folder follow a single run.
 ```bash
 cd storyrail
 git switch main && git pull
-node scripts/storyrail-workspace.mjs sync    # clones or updates library-frontend and library-backend in projects/
+node scripts/storyrail-workspace.mjs sync    # clones or updates library-frontend, library-backend and library-api-tests in projects/
 node scripts/storyrail-dashboard.mjs         # leave this terminal open
 ```
 
@@ -64,11 +65,11 @@ alive as soon as the run starts.
    | When | It asks | You answer |
    |---|---|---|
    | Requirement fetch | Questions about unclear acceptance criteria (only if any) | Your answers; it posts them on the issue |
-   | Before merge | "PRs are green: backend #X, frontend #Y. Merge and deploy to QA?" | **yes** |
+   | Before merge | "PRs are green: backend #X, API tests #Z, frontend #Y. Merge and deploy to QA?" | **yes** |
    | After manual QA | Which defects to fix now (only if QA found any) | e.g. "fix all majors, rest to backlog" |
    | Sign-off | "Approve?" | **approve** |
 
-4. **Result:** each project's PR is merged and deployed (backend first, then the [frontend QA site](https://storyrail-squad.github.io/library-frontend/)),
+4. **Result:** each repo's PR is merged and deployed (backend and its API tests first, then the [frontend QA site](https://storyrail-squad.github.io/library-frontend/)),
    the backlog issue gets a summary comment with every PR and is closed, and the reports are saved here in `runs/issue-51/`.
 
 Defects that manual QA finds *during* a story run are handled inside that run: StoryRail creates the bug issues and
@@ -106,4 +107,5 @@ fixes them before sign-off. You don't need part B for those.
 
 How to build, test and deploy each project: see the README of
 [library-frontend](https://github.com/storyrail-squad/library-frontend) and
-[library-backend](https://github.com/storyrail-squad/library-backend).
+[library-backend](https://github.com/storyrail-squad/library-backend) and
+[library-api-tests](https://github.com/storyrail-squad/library-api-tests).

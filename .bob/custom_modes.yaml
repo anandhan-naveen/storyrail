@@ -5,7 +5,7 @@ customModes:
   - slug: sr-orchestrator
     name: "StoryRail · Orchestrator"
     description: "Runs a StoryRail story or defect loop from start to sign-off."
-    roleDefinition: "You are the StoryRail orchestrator. You take a backlog issue (user story or bug) through the squad of StoryRail modes, across the separate frontend and backend repos, to a signed-off release, enforce every gate and keep the live dashboard current. You never write product code or tests yourself."
+    roleDefinition: "You are the StoryRail orchestrator. You take a backlog issue (user story or bug) through the squad of StoryRail modes, across the separate frontend, backend and API-test repos, to a signed-off release, enforce every gate and keep the live dashboard current. You never write product code or tests yourself."
     whenToUse: "Started by the /storyrail command with an issue number, `fix <bug issues>` or `status`."
     customInstructions: "Follow your brief in .bob/rules-sr-orchestrator/ exactly. Report progress only through node scripts/storyrail-status.mjs."
     groups:
@@ -28,8 +28,8 @@ customModes:
       - read
       - execute
       - - edit
-        - fileRegex: "^(runs/.*|projects/backend/docs/api/openapi\\.yaml|projects/frontend/contract/openapi\\.yaml)$"
-          description: "Run spec and the two contract files only"
+        - fileRegex: "^(runs/.*|projects/backend/docs/api/openapi\\.yaml|projects/frontend/contract/openapi\\.yaml|projects/api-tests/contract/openapi\\.yaml)$"
+          description: "Run spec and the three contract files only"
   - slug: sr-fe-dev
     name: "StoryRail · Frontend dev"
     description: "StoryRail frontend developer. Implements the frontend part of a run spec in React + TypeScript with unit tests."
@@ -52,8 +52,8 @@ customModes:
       - read
       - execute
       - - edit
-        - fileRegex: "^projects/backend/(?!tests/api/|docs/api/).*"
-          description: "library-backend app code only (not its API tests or contract)"
+        - fileRegex: "^projects/backend/(?!docs/api/).*"
+          description: "library-backend app code only (not its contract)"
   - slug: sr-ui-tests
     name: "StoryRail · Isolated UI automation"
     description: "StoryRail isolated UI automation. Writes and runs Playwright tests for the frontend acceptance criteria against a local build with a mocked API."
@@ -68,16 +68,16 @@ customModes:
           description: "UI tests and findings only"
   - slug: sr-api-tests
     name: "StoryRail · API automation"
-    description: "StoryRail API automation. Writes and runs black-box Playwright API tests for the backend acceptance criteria against the locally running backend."
-    roleDefinition: "You are the StoryRail API automation engineer. You write black-box Playwright API tests for the backend acceptance criteria against the locally running backend, using the OpenAPI contract as the oracle."
+    description: "StoryRail API automation. Writes and runs black-box Cucumber + Java (RestAssured) acceptance scenarios for the backend acceptance criteria in the library-api-tests repo, against the locally running backend."
+    roleDefinition: "You are the StoryRail API automation engineer. You write black-box Cucumber + Java (RestAssured) scenarios for the backend acceptance criteria in library-api-tests, tagged per AC and @qa for the QA run, using the OpenAPI contract as the oracle."
     whenToUse: "Use after the backend developer finishes."
     customInstructions: "Follow your brief in .bob/rules-sr-api-tests/ exactly. Report progress only through node scripts/storyrail-status.mjs."
     groups:
       - read
       - execute
       - - edit
-        - fileRegex: "^(projects/backend/tests/api/|runs/).*"
-          description: "API tests and findings only"
+        - fileRegex: "^(projects/api-tests/(src/test/|README\\.md)|runs/).*"
+          description: "library-api-tests scenarios, steps and README, plus findings"
   - slug: sr-reviewer
     name: "StoryRail · Strict reviewer"
     description: "StoryRail strict code reviewer. Read-only review of a run's changes against the issue's acceptance criteria, the contract and the project conventions. Blocks on any real defect."

@@ -52,8 +52,9 @@ Clone only the hub; it clones the two projects into `projects/` itself.
 git clone https://github.com/storyrail-squad/storyrail.git
 cd storyrail
 git switch bob
-node scripts/storyrail-workspace.mjs sync      # clones library-frontend and library-backend into projects/
-(cd projects/frontend && npm ci) && (cd projects/frontend/tests/ui && npm ci && npx playwright install chromium) && (cd projects/backend/tests/api && npm ci)
+node scripts/storyrail-workspace.mjs sync      # clones library-frontend, library-backend and library-api-tests into projects/
+(cd projects/frontend && npm ci) && (cd projects/frontend/tests/ui && npm ci && npx playwright install chromium)
+(cd projects/api-tests && mvn -B -q test-compile)   # downloads the Cucumber/RestAssured dependencies once
 ```
 
 The repo names and QA URL live in `storyrail.config.json`. To use your GitLab projects at the office, change them there.
@@ -100,7 +101,7 @@ Run **one story or bug at a time**: the dashboard and your working folder follow
    Several issues that belong together: `/storyrail 46 47`.
 4. Answer when it stops at a gate:
    - questions about unclear acceptance criteria,
-   - **"PRs are green: backend #X, frontend #Y. Merge and deploy to QA?"** (one PR per project the story touches; backend merges first),
+   - **"PRs are green: backend #X, API tests #Z, frontend #Y. Merge and deploy to QA?"** (one PR per repo the story touches; backend first, then API tests, then frontend),
    - which QA defects to fix now,
    - **sign-off**.
 5. Bugs found later: the analyst uses the **Bug** template (steps, expected, actual), then `/storyrail fix 50 51`.

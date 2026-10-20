@@ -19,6 +19,15 @@
       "workflow": "Backend CI/CD",
       "qaUrl": null,
       "contract": "docs/api/openapi.yaml"
+    },
+    "apiTests": {
+      "repo": "storyrail-squad/library-api-tests",
+      "cloneUrl": "https://github.com/storyrail-squad/library-api-tests.git",
+      "path": "projects/api-tests",
+      "workflow": "API tests CI",
+      "qaUrl": null,
+      "contract": "contract/openapi.yaml",
+      "$comment": "Cucumber + Java acceptance tests for the backend. Part of the backend lane; a story branch here runs against the backend branch with the same name."
     }
   }
 }

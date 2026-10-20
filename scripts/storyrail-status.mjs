@@ -14,7 +14,7 @@
 //   node scripts/storyrail-status.mjs end
 //   node scripts/storyrail-status.mjs show
 //
-// Stations: req-fetch fe-dev be-dev ui-tests api-tests reviewer gate fixer cicd smoke manual-tests signoff
+// Stations: req-fetch fe-dev be-dev ui-tests api-tests reviewer gate fixer cicd smoke qa-api manual-tests signoff
 // Statuses: pending running done failed skipped waiting
 
 import { mkdirSync, readFileSync, writeFileSync, renameSync, openSync, closeSync, unlinkSync, statSync } from 'node:fs';
@@ -26,7 +26,7 @@ const DIR = join(ROOT, '.storyrail');
 const FILE = join(DIR, 'status.json');
 const LOCK = join(DIR, 'status.lock');
 
-const STATIONS = ['req-fetch', 'fe-dev', 'be-dev', 'ui-tests', 'api-tests', 'reviewer', 'gate', 'fixer', 'cicd', 'smoke', 'manual-tests', 'signoff'];
+const STATIONS = ['req-fetch', 'fe-dev', 'be-dev', 'ui-tests', 'api-tests', 'reviewer', 'gate', 'fixer', 'cicd', 'smoke', 'qa-api', 'manual-tests', 'signoff'];
 const STATUSES = ['pending', 'running', 'done', 'failed', 'skipped', 'waiting'];
 const LEVELS = ['ok', 'warn', 'bad', 'info'];
 const MAX_FEED = 200;
