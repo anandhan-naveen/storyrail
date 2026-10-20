@@ -257,9 +257,10 @@ svg.wires{position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-eve
 #orch .arc{fill:none;stroke:var(--line);stroke-width:2.5}
 #orch .arc.lit{stroke:var(--brand)}
 #orch .arc.par{stroke-dasharray:3 6}
-#orch .arc.loop{stroke-dasharray:7 6}
-#orch .arc.loop.lit{stroke:var(--wait)}
-#orch .arc-lab.loop.lit{fill:var(--wait)}
+#orch .round{display:none}
+#orch .round.on{display:inline}
+#orch .round rect{fill:var(--wait)}
+#orch .round text{font:800 12px var(--f-body);fill:#fff;text-anchor:middle;dominant-baseline:central}
 #orch .arc-lab{font:600 13px var(--f-body);fill:var(--muted);paint-order:stroke;stroke:var(--canvas);stroke-width:5px;stroke-linejoin:round}
 #orch .arc-lab.lit{fill:var(--ok)}
 #orch .spoke{stroke:var(--line);stroke-width:1.5;opacity:.55}
@@ -668,7 +669,7 @@ const NS="http://www.w3.org/2000/svg";
 const O={cx:500,cy:395,R:270,r:38,hub:92};
 // Hand-off labels between ring neighbours, keyed "from>to"; "par" = the two work side by side.
 const HANDOFF={"start":"Story picked","req-fetch>fe-dev":"Spec + contract","fe-dev>be-dev":"par","be-dev>ui-tests":"Code + unit tests","ui-tests>api-tests":"par",
-  "api-tests>reviewer":"Tests green","reviewer>gate":"par","gate>fixer":"Findings","fixer>cicd":"loop","cicd>manual-tests":"Deployed to QA","end":"Ready for sign-off"};
+  "api-tests>reviewer":"Tests green","reviewer>gate":"par","gate>fixer":"two:Findings ⇄ fixes","fixer>cicd":"Approved","cicd>manual-tests":"Deployed to QA","end":"Ready for sign-off"};
 let orchBuilt=false, orchNodes={}, orchSpokes={}, orchArcs=[];
 function svgEl(tag,attrs,parent){ const e=document.createElementNS(NS,tag); for(const k in attrs) e.setAttribute(k,attrs[k]); if(parent) parent.append(e); return e; }
 function polar(deg,rad){ const a=deg*Math.PI/180; return [O.cx+rad*Math.cos(a), O.cy+rad*Math.sin(a)]; }
@@ -693,38 +694,16 @@ function buildOrch(){
   const delta=Math.asin((O.r+12)/O.R)*180/Math.PI;
   slots.forEach((m,i)=>{ const next=slots[(i+1)%n];
     const key=i===0?"start":(i===n-1?"end":(m.stations[m.stations.length-1]+">"+next.stations[0]));
-    const lab=HANDOFF[key]; const a1=angle(i)+delta, a2=angle(i+1)-delta;
+    let lab=HANDOFF[key]; const a1=angle(i)+delta, a2=angle(i+1)-delta;
     const [x1,y1]=polar(a1,O.R), [x2,y2]=polar(a2,O.R);
-    if(lab==="loop") return; // the fixer hands back to the reviewers, who approve the release (drawn below)
-    const par=lab==="par";
+    const par=lab==="par", two=!!lab&&lab.startsWith("two:"); if(two) lab=lab.slice(4);
     const path=svgEl("path",{class:"arc"+(par?" par":""),d:`M${x1},${y1} A${O.R},${O.R} 0 0 1 ${x2},${y2}`,"marker-end":par?"":"url(#o-arr)"},svg);
+    if(two) path.setAttribute("marker-start","url(#o-arr)"); // findings go to the fixer, fixes come back for a re-check
     let text=null;
     if(lab&&!par){ const mid=(angle(i)+angle(i+1))/2; const [lx,ly]=polar(mid,key==="gate>fixer"?O.R-34:O.R-74);
       text=svgEl("text",{class:"arc-lab",x:lx,y:ly,"text-anchor":"middle","dominant-baseline":"middle"},svg); text.textContent=lab; }
     orchArcs.push({path,text,target:next,start:i===0,end:i===n-1});
   });
-  // review loop: the fixer goes back to both reviewers, and their approval goes straight to release
-  const at=st=>slots.findIndex(m=>m.stations.includes(st));
-  const ctr=i=>polar(angle(i),O.R);
-  function chord(fi,ti,bend,cls,lab,labPos){
-    const [x0,y0]=ctr(fi),[x2,y2]=ctr(ti); const mx=(x0+x2)/2,my=(y0+y2)/2;
-    const cx=mx+(O.cx-mx)*bend, cy=my+(O.cy-my)*bend;
-    const trim=(x,y,d)=>{ const dx=cx-x,dy=cy-y,l=Math.hypot(dx,dy); return [x+dx/l*d,y+dy/l*d]; };
-    const [sx,sy]=trim(x0,y0,O.r+12),[ex,ey]=trim(x2,y2,O.r+14);
-    const path=svgEl("path",{class:"arc "+cls,d:`M${sx},${sy} Q${cx},${cy} ${ex},${ey}`,"marker-end":"url(#o-arr)"},svg);
-    let text=null;
-    if(lab){ const [lx,ly]=polar(labPos[0],labPos[1]);
-      text=svgEl("text",{class:"arc-lab "+cls,x:lx,y:ly,"text-anchor":"middle","dominant-baseline":"middle"},svg); text.textContent=lab; }
-    return {path,text};
-  }
-  const iFix=at("fixer"), iRev=at("reviewer"), iGate=at("gate"), iRel=at("cicd");
-  if([iFix,iRev,iGate,iRel].every(i=>i>0)){
-    const A=i=>angle(i);
-    const back=[chord(iFix,iGate,.18,"loop"),chord(iFix,iRev,.22,"loop","Fixed, check again",[(A(iGate)+A(iRev))/2-6,O.R-74])];
-    const fwd=[chord(iGate,iRel,.58,"go"),chord(iRev,iRel,.58,"go","Approved",[(A(iFix)+A(iRel))/2-2,O.R-96])];
-    back.forEach(c=>orchArcs.push({...c,when:()=>((state.fixer||{}).status==="done")}));
-    fwd.forEach(c=>orchArcs.push({...c,when:()=>{ const t=(state.cicd||{}).status; return !!t&&t!=="pending"&&t!=="skipped"; }}));
-  }
   svg.querySelectorAll(".arc-lab").forEach(t=>svg.append(t)); // labels above every line
   // hub: the squad lead
   const hub=svgEl("g",{class:"hub node",tabindex:"0",role:"button"},svg); orchNodes[lead.id]={g:hub,m:lead};
@@ -744,6 +723,9 @@ function buildOrch(){
     svgEl("circle",{class:"bg",cx:x,cy:y,r:O.r},g);
     const ini=svgEl("text",{class:"ini",x,y},g); ini.textContent=m.name.slice(0,1).toUpperCase();
     svgEl("circle",{class:"badge",cx:x+O.r*.72,cy:y+O.r*.72,r:9},g);
+    if(m.stations.some(st=>st==="reviewer"||st==="gate")){ const rt=svgEl("g",{class:"round"},g);
+      const px=x-8, py=y+O.r+6; // on the lower rim of the node, clear of the arrows and labels
+      svgEl("rect",{x:px-32,y:py-11,width:64,height:22,rx:11},rt); svgEl("text",{x:px,y:py},rt); }
     // name + role outside the ring
     const cos=Math.cos(a*Math.PI/180), sin=Math.sin(a*Math.PI/180);
     const [tx,ty]=polar(a,O.R+O.r+22); const anchor=Math.abs(cos)<.3?"middle":(cos>0?"start":"end");
@@ -757,6 +739,11 @@ function buildOrch(){
     g.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); openMember(m.id,g); } });
   });
   orchBuilt=true;
+}
+// Which review round a reviewer is in: from its note ("Round 2: …"), else round 2+ once the fixer has delivered.
+function reviewRound(ms){
+  const m=/round\s*(\d+)/i.exec(ms.note||""); if(m) return Number(m[1]);
+  return (state.fixer||{}).status==="done"?2:1;
 }
 function renderOrch(){
   if(!squad.length) return; if(!orchBuilt) buildOrch(); if(!orchBuilt) return;
@@ -777,6 +764,8 @@ function renderOrch(){
     g.setAttribute("class","node "+st+(m===po?" po":""));
     const c=g.querySelector(".prog"); const C=2*Math.PI*(O.r+7); c.setAttribute("stroke-dashoffset",C*(1-(st==="done"?100:ms.progress)/100));
     g.setAttribute("aria-label",m.name+", "+m.role+": "+(SAY[st]||st)+(ms.note?". "+ms.note:""));
+    const rt=g.querySelector(".round");
+    if(rt){ const r=st==="running"?reviewRound(ms):0; rt.classList.toggle("on",r>1); rt.querySelector("text").textContent="Round "+r; }
     const sp=orchSpokes[m.id]; sp.setAttribute("class","spoke "+st); sp.style.setProperty("--k",(KIND[m.kind]||KIND.lead)[0]);
     if(st==="running"||st==="waiting"||st==="failed") now.push([m,ms,st]);
   });
