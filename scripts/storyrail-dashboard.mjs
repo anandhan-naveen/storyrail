@@ -279,6 +279,12 @@ const server = createServer(async (req, res) => {
     if (req.method === 'GET' && path === '/') {
       return send(res, 200, await readFile(join(ROOT, 'storyrail-dashboard', 'index.html')), 'text/html; charset=utf-8');
     }
+    if (req.method === 'GET' && (path === '/demo' || path === '/demo/')) {
+      // the stand-alone demo replay (build it with: python3 scripts/storyrail-build-demo.py)
+      const demo = join(ROOT, 'docs', 'demo', 'index.html');
+      if (!existsSync(demo)) return send(res, 404, 'No demo built yet. Run: python3 scripts/storyrail-build-demo.py', 'text/plain; charset=utf-8');
+      return send(res, 200, await readFile(demo), 'text/html; charset=utf-8');
+    }
     if (req.method === 'GET' && path === '/status.json') {
       return send(res, 200, existsSync(join(STATE_DIR, 'status.json')) ? await readFile(join(STATE_DIR, 'status.json')) : '{}');
     }
