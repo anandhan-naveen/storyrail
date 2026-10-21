@@ -109,14 +109,9 @@ function memberNotes(member, st) {
 /** Every instruction file of a member's agent: its brief plus the rules that apply to it. */
 function briefPaths(member) {
   if (!member.brief) return [];
-  const bob = existsSync(join(ROOT, '.bob'));
-  if (bob) {
-    const dir = member.brief === 'orchestrator' ? 'rules-sr-orchestrator' : `rules-${member.brief}`;
-    const list = (d) => (existsSync(join(ROOT, '.bob', d)) ? readdirSync(join(ROOT, '.bob', d)).filter((f) => f.endsWith('.md')).sort().map((f) => `.bob/${d}/${f}`) : []);
-    return [...list('rules'), ...list(dir)];
-  }
-  const own = member.brief === 'orchestrator' ? '.claude/skills/storyrail/SKILL.md' : `.claude/agents/${member.brief}.md`;
-  return ['CLAUDE.md', own].filter((p) => existsSync(join(ROOT, p)));
+  const dir = member.brief === 'orchestrator' ? 'rules-sr-orchestrator' : `rules-${member.brief}`;
+  const list = (d) => (existsSync(join(ROOT, '.bob', d)) ? readdirSync(join(ROOT, '.bob', d)).filter((f) => f.endsWith('.md')).sort().map((f) => `.bob/${d}/${f}`) : []);
+  return [...list('rules'), ...list(dir)];
 }
 
 function briefPath(member) {
