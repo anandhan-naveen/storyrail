@@ -101,7 +101,7 @@ fixes them before sign-off. You don't need part B for those.
 | `.bob/custom_modes.yaml`, `.bob/rules-sr-*/`, `.bob/commands/storyrail.md` | The agents as IBM Bob custom modes (with per-lane edit limits), their briefs and the `/storyrail` command; conventions in [.bob/rules/01-project-guide.md](.bob/rules/01-project-guide.md) |
 | `scripts/storyrail-workspace.mjs` | Clones/updates the project repos into `projects/` |
 | `scripts/storyrail-status.mjs`, `scripts/storyrail-dashboard.mjs`, `storyrail-dashboard/` | Live dashboard (http://localhost:4800): the orchestrator handing out work (Orchestration), the squad as named members with live status and a chat per member, plus the rail diagram |
-| `docs/demo/index.html` | Stand-alone demo replay with sample data: open the file, no server or network needed (`python3 scripts/storyrail-build-demo.py` rebuilds it) |
+| `docs/demo/index.html` | Stand-alone demo replay with sample data: open the file, no server or network needed (`node scripts/storyrail-build-demo.mjs` rebuilds it) |
 | `runs/issue-<N>/` | Every run's spec, review and scan reports, fixer responses, QA logs and evidence |
 | `docs/storyrail/` | [Pipeline and gates](docs/storyrail/PIPELINE.md), [setup](docs/storyrail/SETUP.md) |
 | `tests/manual/`, `docs/QUALITY-GATE.md` | Records of the first run (from before the repo split) |

@@ -177,7 +177,7 @@ It needs no server, no login and no internet:
   web server, or GitHub Pages (Settings → Pages → Deploy from a branch → `/docs`; the page is then at `…/demo/`).
 
 After changing the dashboard, the squad names or the sample data in `storyrail-dashboard/demo-src/`, rebuild it with
-`python3 scripts/storyrail-build-demo.py` and commit the result.
+`node scripts/storyrail-build-demo.mjs` and commit the result.
 
 ### Ask a squad member
 
