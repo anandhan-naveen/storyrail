@@ -29,5 +29,11 @@ The orchestrator gives you the issue number(s), the run folder, and the **mode**
 - Write only the run folder's `spec.md` and the three contract files (`projects/backend/docs/api/openapi.yaml`, `projects/frontend/contract/openapi.yaml`, `projects/api-tests/contract/openapi.yaml`). Don't commit in the projects; the orchestrator does.
 - Never weaken or drop an acceptance criterion. If one is untestable, it goes under Open questions.
 
+## Work notes
+Before your completion summary, write `runs/issue-<N>/notes/req-fetch.md` (on a later round or defect loop, add a `## Round <k>` section
+instead of overwriting). Short bullets, at most 30 lines: the decisions you made and why, assumptions, what you tried and
+dropped, the files you changed, and anything you could not do. You answer the product owner's questions on the dashboard
+from these notes, so write them for someone who did not watch you work. No secrets, tokens or customer data.
+
 ## Completion summary (returned to the orchestrator, ≤ 120 words)
 Lanes, AC count, contract changes yes/no, and the open questions verbatim (or "none").

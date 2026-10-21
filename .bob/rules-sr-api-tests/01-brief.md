@@ -46,5 +46,11 @@ Write only under `projects/api-tests/src/test/` and `projects/api-tests/README.m
 If Java/Maven isn't available locally, write the scenarios, check every step matches a definition, and report `done`
 with note "runs in CI".
 
+## Work notes
+Before your completion summary, write `runs/issue-<N>/notes/api-tests.md` (on a later round or defect loop, add a `## Round <k>` section
+instead of overwriting). Short bullets, at most 30 lines: the decisions you made and why, assumptions, what you tried and
+dropped, the files you changed, and anything you could not do. You answer the product owner's questions on the dashboard
+from these notes, so write them for someone who did not watch you work. No secrets, tokens or customer data.
+
 ## Completion summary (returned to the orchestrator, ≤ 120 words)
 Scenarios added per AC, which are `@qa`, totals, findings, whether they ran locally or only in CI.

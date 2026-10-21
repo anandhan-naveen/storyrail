@@ -41,8 +41,8 @@ customModes:
       - execute
       - mcp
       - - edit
-        - fileRegex: "^projects/frontend/(?!tests/|contract/).*"
-          description: "library-frontend app code only (not its tests or contract)"
+        - fileRegex: "^(projects/frontend/(?!tests/|contract/).*|runs/[^/]+/notes/fe-dev\\.md)$"
+          description: "library-frontend app code (not its tests or contract), plus its work notes"
   - slug: sr-be-dev
     name: "StoryRail · Backend dev"
     description: "StoryRail backend developer. Implements the backend part of a run spec in Java 21 / Spring Boot with unit tests."
@@ -53,8 +53,8 @@ customModes:
       - read
       - execute
       - - edit
-        - fileRegex: "^projects/backend/(?!docs/api/).*"
-          description: "library-backend app code only (not its contract)"
+        - fileRegex: "^(projects/backend/(?!docs/api/).*|runs/[^/]+/notes/be-dev\\.md)$"
+          description: "library-backend app code (not its contract), plus its work notes"
   - slug: sr-ui-tests
     name: "StoryRail · Isolated UI automation"
     description: "StoryRail isolated UI automation. Writes and runs Playwright tests for the frontend acceptance criteria against a local build with a mocked API."

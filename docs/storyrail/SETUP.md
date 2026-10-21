@@ -183,6 +183,10 @@ After changing the dashboard, the squad names or the sample data in `storyrail-d
 
 Select a member to see their work as a timeline (status updates, reports they wrote) and ask them about it, e.g.
 "Which acceptance criteria have you covered?" or "Why did you flag R1-03?" (to Priya). They answer in role, from their records.
+Their records include the **work notes** every agent leaves in `runs/issue-<N>/notes/<station>.md` (decisions and why,
+assumptions, files changed) and the **completion summary** the orchestrator saves in `runs/issue-<N>/summaries/`.
+Agents that ran side by side only hand a summary back to the orchestrator, so these files are what lets Varunesh or
+Meysam explain afterwards why they built something the way they did.
 
 | `STORYRAIL_ASK` | Who answers | Needs |
 |---|---|---|

@@ -58,6 +58,7 @@ First time on a machine: `node scripts/storyrail-workspace.mjs sync`, then `(cd 
 
 ## Conventions every agent follows
 
+- **Leave work notes.** Every agent that changes files writes `runs/issue-<N>/notes/<station>.md` before it replies (see its brief); the dashboard chat answers from them.
 - **Stay in your lane.** Each agent writes only to the paths its brief allows. Report problems outside your lane instead of fixing them.
 - **Several repos, one story.** A story can touch the frontend, the backend and the API tests. Each touched repo gets a branch with the **same name** and its own PR; they reference the same backlog issue. The backend lane always includes library-api-tests.
 - **Contract first.** API changes go into `projects/backend/docs/api/openapi.yaml` before code, and the same file is copied to `projects/frontend/contract/openapi.yaml` and `projects/api-tests/contract/openapi.yaml`. Field names, status codes and problem titles must match it exactly. Merge order: backend, then API tests, then frontend.

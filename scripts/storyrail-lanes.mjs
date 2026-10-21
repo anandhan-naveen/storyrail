@@ -21,11 +21,12 @@ const FE = config.projects.frontend.path;
 const BE = config.projects.backend.path;
 const AT = config.projects.apiTests.path;
 
-// Paths are relative to the hub root. `allow` = prefixes the agent may change; `deny` = exceptions inside them.
+// Paths are relative to the hub root. `allow` = prefixes the agent may change; `deny` = exceptions inside them;
+// `notes` = the station whose work notes (runs/<run>/notes/<station>.md) the agent may also write.
 const LANES = {
   'req-fetch': { allow: ['runs/', `${BE}/docs/api/openapi.yaml`, `${FE}/contract/openapi.yaml`, `${AT}/contract/openapi.yaml`] },
-  'fe-dev': { allow: [`${FE}/`], deny: [`${FE}/tests/`, `${FE}/contract/`, `${FE}/.github/`] },
-  'be-dev': { allow: [`${BE}/`], deny: [`${BE}/docs/api/`, `${BE}/.github/`] },
+  'fe-dev': { allow: [`${FE}/`], deny: [`${FE}/tests/`, `${FE}/contract/`, `${FE}/.github/`], notes: 'fe-dev' },
+  'be-dev': { allow: [`${BE}/`], deny: [`${BE}/docs/api/`, `${BE}/.github/`], notes: 'be-dev' },
   'ui-tests': { allow: [`${FE}/tests/ui/`, 'runs/'] },
   'api-tests': { allow: [`${AT}/src/test/`, `${AT}/README.md`, 'runs/'] },
   reviewer: { allow: [] },
@@ -60,7 +61,8 @@ function allChanges() {
 function inLane(file, lane) {
   const allowed = lane.allow.some((prefix) => file === prefix || file.startsWith(prefix));
   const denied = (lane.deny ?? []).some((prefix) => file.startsWith(prefix));
-  return allowed && !denied;
+  const notes = lane.notes && new RegExp(`^runs/[^/]+/notes/${lane.notes}\\.md$`).test(file);
+  return (allowed && !denied) || Boolean(notes);
 }
 
 const [cmd, ...agents] = process.argv.slice(2);
@@ -90,7 +92,8 @@ switch (cmd) {
   case 'lanes':
     for (const [agent, lane] of Object.entries(LANES)) {
       const deny = lane.deny?.length ? ` (not ${lane.deny.join(', ')})` : '';
-      console.log(`${agent}: ${lane.allow.join(', ') || 'nothing (read-only)'}${deny}`);
+      const notes = lane.notes ? `, runs/<run>/notes/${lane.notes}.md` : '';
+      console.log(`${agent}: ${lane.allow.join(', ') || 'nothing (read-only)'}${deny}${notes}`);
     }
     break;
   default:

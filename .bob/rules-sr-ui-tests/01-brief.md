@@ -17,5 +17,11 @@ Write only under `projects/frontend/tests/ui/` (and `runs/issue-<N>/ui-findings.
 5. Update the traceability table in `projects/frontend/tests/ui/README.md`.
 6. Report `set ui-tests done 100 "<n> tests · <m> ACs"`; `node scripts/storyrail-status.mjs metric ui <passed> <total>`.
 
+## Work notes
+Before your completion summary, write `runs/issue-<N>/notes/ui-tests.md` (on a later round or defect loop, add a `## Round <k>` section
+instead of overwriting). Short bullets, at most 30 lines: the decisions you made and why, assumptions, what you tried and
+dropped, the files you changed, and anything you could not do. You answer the product owner's questions on the dashboard
+from these notes, so write them for someone who did not watch you work. No secrets, tokens or customer data.
+
 ## Completion summary (returned to the orchestrator, ≤ 120 words)
 Tests added per AC, totals, run time, findings logged.
