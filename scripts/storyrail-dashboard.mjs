@@ -75,7 +75,8 @@ function memberOutputs(member, st) {
   const folder = runFolder(st);
   if (!folder || !existsSync(join(ROOT, folder))) return [];
   const patterns = member.stations.flatMap((s) => squad.outputs?.[s] ?? []).map(globToRegex);
-  if (!patterns.length) return [];
+  const extra = memberNotes(member, st).map((n) => n.path);
+  if (!patterns.length) return extra;
   const found = [];
   const walk = (dir) => {
     for (const entry of readdirSync(join(ROOT, dir), { withFileTypes: true })) {
@@ -85,7 +86,39 @@ function memberOutputs(member, st) {
     }
   };
   walk(folder);
-  return found.sort();
+  return [...new Set([...found, ...extra])].sort();
+}
+
+/** A member's work notes and saved completion summaries in this run: [{ path, text }]. */
+function memberNotes(member, st) {
+  const folder = runFolder(st);
+  if (!folder) return [];
+  const ids = member.kind === 'lead' ? ['orchestrator'] : member.stations;
+  const found = [];
+  for (const kind of ['notes', 'summaries']) {
+    for (const id of ids) {
+      const rel = `${folder}/${kind}/${id}.md`.split(sep).join('/');
+      try {
+        found.push({ kind, path: rel, text: readFileSync(join(ROOT, rel), 'utf8') });
+      } catch {
+        // not written (yet)
+      }
+    }
+  }
+  return found;
+}
+
+/** Every instruction file of a member's agent: its brief plus the rules that apply to it. */
+function briefPaths(member) {
+  if (!member.brief) return [];
+  const bob = existsSync(join(ROOT, '.bob'));
+  if (bob) {
+    const dir = member.brief === 'orchestrator' ? 'rules-sr-orchestrator' : `rules-${member.brief}`;
+    const list = (d) => (existsSync(join(ROOT, '.bob', d)) ? readdirSync(join(ROOT, '.bob', d)).filter((f) => f.endsWith('.md')).sort().map((f) => `.bob/${d}/${f}`) : []);
+    return [...list('rules'), ...list(dir)];
+  }
+  const own = member.brief === 'orchestrator' ? '.claude/skills/storyrail/SKILL.md' : `.claude/agents/${member.brief}.md`;
+  return ['CLAUDE.md', own].filter((p) => existsSync(join(ROOT, p)));
 }
 
 function briefPath(member) {
@@ -134,10 +167,13 @@ function buildPrompt(member, question, st) {
   }
   const feed = memberFeed(member, st).slice(-15).map((f) => `- ${f.t} [${f.level}] ${f.msg}`).join('\n') || '- (nothing yet)';
   const history = loadChat(member.id).slice(-6).map((c) => `${c.from === 'you' ? 'Product owner' : member.name}: ${c.text}`).join('\n');
-  const brief = briefPath(member);
+  const briefs = briefPaths(member);
+  const notes = memberNotes(member, st)
+    .map((n) => `${n.kind === 'notes' ? 'Your work notes' : 'Your completion summary to the orchestrator'} (${n.path}):\n"""\n${n.text.slice(0, 3500)}\n"""`)
+    .join('\n');
   return [
     `You are ${member.name}, the ${member.role} in the StoryRail delivery squad. ${member.about}`,
-    brief ? `Your working instructions are in ${brief} (read it if the question is about how you work).` : '',
+    briefs.length ? `Your working instructions are in ${briefs.join(', ')} (read them if the question is about how you work).` : '',
     'The product owner is asking you a question on the squad dashboard. Answer in first person, as yourself, in plain',
     'language and at most 120 words. Base the answer only on the records below and the files of this run; if they do not',
     'cover it, say so and name who in the squad would know. Do not change any file.',
@@ -147,6 +183,7 @@ function buildPrompt(member, question, st) {
     `Your status: ${member.stations.length ? describeStatus(member, st) : 'you coordinate the whole run'}`,
     `Your recent activity (oldest first):\n${feed}`,
     `Your outputs: ${outputs.join(', ') || 'none yet'}`,
+    notes,
     excerpt ? `Start of ${main}:\n"""\n${excerpt}\n"""` : '',
     history ? `Earlier in this chat:\n${history}` : '',
     '',
@@ -175,8 +212,13 @@ function recordsAnswer(member, st) {
   }
   const feed = memberFeed(member, st).slice(-3);
   if (feed.length) lines.push(`What I've reported lately:\n${feed.map((f) => `• ${f.msg}`).join('\n')}`);
+  const myNotes = memberNotes(member, st).find((n) => n.kind === 'notes');
+  if (myNotes) {
+    const bullets = myNotes.text.split('\n').filter((l) => /^\s*[-*•]/.test(l)).slice(0, 6).map((l) => `• ${l.replace(/^\s*[-*•]\s*/, '')}`);
+    if (bullets.length) lines.push(`From my work notes:\n${bullets.join('\n')}`);
+  }
   const outputs = memberOutputs(member, st);
-  if (outputs.length) lines.push(`My reports so far: ${outputs.map((o) => o.split('/').pop()).join(', ')}. They're linked at the top of this panel.`);
+  if (outputs.length) lines.push(`My reports so far: ${outputs.map((o) => o.split('/').slice(-2).join('/')).join(', ')}. They're linked at the top of this panel.`);
   lines.push('I can only answer from my records right now: AI answers are not switched on for this dashboard (see SETUP.md, "Ask a squad member").');
   return lines.join('\n');
 }

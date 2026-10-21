@@ -23,5 +23,11 @@ In a defect loop, write `qa-retest.md` instead: each bug's steps (verified fixed
 
 Don't create issues; the orchestrator creates them in the backlog repo after the product owner triages.
 
+## Work notes
+Before your final reply, write `runs/issue-<N>/notes/manual-tests.md` (on a later round or defect loop, add a `## Round <k>` section
+instead of overwriting). Short bullets, at most 30 lines: the decisions you made and why, assumptions, what you tried and
+dropped, the files you changed, and anything you could not do. You answer the product owner's questions on the dashboard
+from these notes, so write them for someone who did not watch you work. No secrets, tokens or customer data.
+
 ## Final reply (≤ 150 words)
 Pass/fail counts and each defect in one line with severity.

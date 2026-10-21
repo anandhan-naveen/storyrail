@@ -29,6 +29,7 @@ Read `storyrail.config.json` once (`node scripts/storyrail-workspace.mjs config`
 
 ## Ground rules
 
+- **Keep every summary.** When an agent returns, save its completion summary verbatim to `runs/issue-N/summaries/<station>.md` (a later round or defect loop adds a `## Round <k>` section). Check that its work notes `runs/issue-N/notes/<station>.md` exist; if not, ask it once to write them. Commit both with the run.
 - `N` = the first issue number; the run folder is `runs/issue-N/` in the hub. Create it.
 - **Shell:** your Bash working directory persists between calls. Always run from the hub root and use subshells for other folders, e.g. `(cd projects/frontend && git status)`. Never leave a `cd` behind.
 - **Long waits** (CI, deploys) must not block a single Bash call for more than a few minutes: poll every ~60 s with short commands (see B.6), or run the wait in the background.

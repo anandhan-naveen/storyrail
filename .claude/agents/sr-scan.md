@@ -27,5 +27,11 @@ Also read the diff for Sonar-style smells the tools miss: cognitive complexity, 
 A table of each check → tool/version → result, then findings: id `S<k>-<nn>`, severity (blocker/major/minor), file:line, rule, fix.
 Report `security <high/critical vulns> <lint warnings>`, then `set gate done 100 "<n> findings · <tools run>/<tools total> tools"`.
 
+## Work notes
+Before your final reply, write `runs/issue-<N>/notes/gate.md` (on a later round or defect loop, add a `## Round <k>` section
+instead of overwriting). Short bullets, at most 30 lines: the decisions you made and why, assumptions, what you tried and
+dropped, the files you changed, and anything you could not do. You answer the product owner's questions on the dashboard
+from these notes, so write them for someone who did not watch you work. No secrets, tokens or customer data.
+
 ## Final reply (≤ 120 words)
 The results table in short and the findings count by severity.

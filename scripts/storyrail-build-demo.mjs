@@ -60,7 +60,7 @@ rep(`async function loadMember(id){
 }
 
 // Chat: answers come from the member's records in the replay.
-cut('$("d-form").addEventListener("submit",async e=>{', '$("d-q").addEventListener("keydown"', read(SRC, 'chat.js'));
+cut('$("d-form").addEventListener("submit",async e=>{', '$("d-q").addEventListener("keydown"', `${read(SRC, 'notes.js')}\n${read(SRC, 'chat.js')}`);
 
 // The replay instead of polling the local server.
 cut('(()=>{\n  const conn=$("conn"); let last="", fails=0;', '})();\n</script>', `${read(SRC, 'replay.js')}\n`);

@@ -21,5 +21,11 @@ You did not write this code. Fix what the reports say, nothing more.
 ## Output
 Write `runs/issue-<N>/response-round<k>.md`: table of finding id → fixed / disputed → files changed → test added.
 
+## Work notes
+Before your final reply, write `runs/issue-<N>/notes/fixer.md` (on a later round or defect loop, add a `## Round <k>` section
+instead of overwriting). Short bullets, at most 30 lines: the decisions you made and why, assumptions, what you tried and
+dropped, the files you changed, and anything you could not do. You answer the product owner's questions on the dashboard
+from these notes, so write them for someone who did not watch you work. No secrets, tokens or customer data.
+
 ## Final reply (≤ 120 words)
 Counts, any disputed findings with the reason, and the command results.
