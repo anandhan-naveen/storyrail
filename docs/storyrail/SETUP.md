@@ -106,6 +106,19 @@ overrides it and is remembered in that browser.
 **Rename the squad** in `storyrail.config.json` → `squad.members` (name, role, a one-line "about"). Restart the
 dashboard server to pick it up.
 
+### Showing the demo anywhere (no network, no account)
+
+`docs/demo/index.html` is a single, self-contained page that replays a sample run of story #51 on a loop, with the
+Orchestration, Squad and Flow tabs, chat from the members' records and an **Evals** tab with sample exam data.
+It needs no server, no login and no internet:
+
+- **Double-click** `docs/demo/index.html`, or open http://localhost:4800/demo while the dashboard runs.
+- **Share it** as a file (mail, Teams), or host the `docs/` folder on any static server: GitLab Pages, an intranet
+  web server, or GitHub Pages (Settings → Pages → Deploy from a branch → `/docs`; the page is then at `…/demo/`).
+
+After changing the dashboard, the squad names or the sample data in `storyrail-dashboard/demo-src/`, rebuild it with
+`python3 scripts/storyrail-build-demo.py` and commit the result.
+
 ### Ask a squad member
 
 Select a member to see their work as a timeline (status updates, reports they wrote) and ask them about it, e.g.
