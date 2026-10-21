@@ -151,7 +151,7 @@ Everything a run produces (spec, review and scan reports, QA log and screenshots
 
 ## The dashboard: squad and chat
 
-The dashboard opens on the **Orchestration** view: Naveen, the squad lead, in the centre and the squad around him in
+The dashboard opens on the **Orchestration** view: Naveen, the orchestrator, in the centre and the squad around him in
 the order a story moves, with Laurence (product owner) at the top. The spoke to whoever is working lights up, a waiting
 hand-off glows amber, and when Naveen sends Sandrine's fixes back for a re-check, Priya and Subramanian get a
 "Round 2" tag. The line above the diagram says what each active member is doing, one line per member.

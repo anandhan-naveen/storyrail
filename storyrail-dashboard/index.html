@@ -371,11 +371,11 @@ svg.wires{position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-eve
 
   <section class="orch" id="view-orch" role="tabpanel" aria-labelledby="tab-orch">
     <div class="orch-head">
-      <h2>How the squad lead hands out the work</h2>
+      <h2>How the orchestrator hands out the work</h2>
       <p>The lit spoke is the hand-off happening now. Select anyone to see their work.</p>
     </div>
     <p class="orch-now" id="orch-now" aria-live="polite"></p>
-    <svg id="orch" viewBox="0 0 1000 790" role="group" aria-label="Squad lead in the centre, squad members around, in rail order"></svg>
+    <svg id="orch" viewBox="0 0 1000 790" role="group" aria-label="Orchestrator in the centre, squad members around, in rail order"></svg>
   </section>
 
   <section class="board" id="view-flow" role="tabpanel" aria-labelledby="tab-flow" aria-label="Delivery flow" hidden>
@@ -568,7 +568,7 @@ const STATUS_ICON={done:'<svg viewBox="0 0 24 24" fill="none" stroke="currentCol
 let squad=[], engine="records", byStation={}, openId=null, lastFocus=null, chatCache={};
 
 function memberState(m){
-  if(!m.stations.length){ // squad lead: follows the run
+  if(!m.stations.length){ // orchestrator: follows the run
     const st=run.startedAt?(run.endedAt?"done":"running"):"pending";
     return {status:st,progress:st==="done"?100:st==="running"?50:0,note:run.phase?("Phase: "+run.phase):"",per:[]};
   }
@@ -614,7 +614,7 @@ function renderSquad(){
   $("stage-title").textContent=waiting.length&&!active.length?"Needs you now":"Working now";
   if(!shown.length){
     const p=document.createElement("p"); p.className="stage-empty";
-    p.textContent=run.endedAt?"This run is finished. Start the next story with /storyrail <issue>.":run.startedAt?"Between steps. "+((squad.find(x=>x.kind==="lead")||{}).name||"The squad lead")+", the squad lead, is handing over the next task.":"The squad is waiting for a story. Start one with /storyrail <issue>.";
+    p.textContent=run.endedAt?"This run is finished. Start the next story with /storyrail <issue>.":run.startedAt?"Between steps. "+((squad.find(x=>x.kind==="lead")||{}).name||"The orchestrator")+", the orchestrator, is handing over the next task.":"The squad is waiting for a story. Start one with /storyrail <issue>.";
     list.append(p);
   }
   shown.forEach(([m,ms])=>{
@@ -690,7 +690,7 @@ $("d-form").addEventListener("submit",async e=>{
 $("d-q").addEventListener("keydown",e=>{ if(e.key==="Enter"&&!e.shiftKey){ e.preventDefault(); $("d-form").requestSubmit(); } });
 $("d-q").addEventListener("input",e=>{ e.target.style.height="auto"; e.target.style.height=Math.min(140,e.target.scrollHeight)+"px"; });
 
-/* ---------- Orchestration view: squad lead in the hub, members on the ring ---------- */
+/* ---------- Orchestration view: orchestrator in the hub, members on the ring ---------- */
 const NS="http://www.w3.org/2000/svg";
 const O={cx:500,cy:395,R:270,r:38,hub:92};
 // Phones get a tighter ring: bigger nodes, names under the nodes, and a viewBox cropped to the ring.
@@ -741,7 +741,7 @@ function buildOrch(){
     orchArcs.push({path,text,target:next,start:i===0,end:i===n-1});
   });
   svg.querySelectorAll(".arc-lab").forEach(t=>svg.append(t)); // labels above every line
-  // hub: the squad lead
+  // hub: the orchestrator
   const hub=svgEl("g",{class:"hub node",tabindex:"0",role:"button"},svg); orchNodes[lead.id]={g:hub,m:lead};
   svgEl("circle",{class:"htrk",cx:O.cx,cy:O.cy,r:O.hub},hub);
   const C=2*Math.PI*O.hub; svgEl("circle",{class:"hprog",cx:O.cx,cy:O.cy,r:O.hub,"stroke-dasharray":C,"stroke-dashoffset":C,transform:`rotate(-90 ${O.cx} ${O.cy})`},hub);
