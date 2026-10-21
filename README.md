@@ -99,7 +99,7 @@ fixes them before sign-off. You don't need part B for those.
 | `storyrail.config.json` | Backlog repo, project repos, local paths, workflow names, QA URL |
 | `.claude/agents/`, `.claude/skills/storyrail/` | The agents and the `/storyrail` orchestrator; conventions in [CLAUDE.md](CLAUDE.md) |
 | `scripts/storyrail-workspace.mjs` | Clones/updates the project repos into `projects/` |
-| `scripts/storyrail-status.mjs`, `scripts/storyrail-dashboard.mjs`, `storyrail-dashboard/` | Live dashboard (http://localhost:4800): the squad lead handing out work (Orchestration), the squad as named members with live status and a chat per member, plus the rail diagram |
+| `scripts/storyrail-status.mjs`, `scripts/storyrail-dashboard.mjs`, `storyrail-dashboard/` | Live dashboard (http://localhost:4800): the orchestrator handing out work (Orchestration), the squad as named members with live status and a chat per member, plus the rail diagram |
 | `runs/issue-<N>/` | Every run's spec, review and scan reports, fixer responses, QA logs and evidence |
 | `docs/storyrail/` | [Pipeline and gates](docs/storyrail/PIPELINE.md), [setup](docs/storyrail/SETUP.md) |
 | `tests/manual/`, `docs/history/run-1/`, `docs/QUALITY-GATE.md` | Records of the first run (from before the repo split) |
