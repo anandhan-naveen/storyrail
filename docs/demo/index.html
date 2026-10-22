@@ -653,7 +653,7 @@ function drawWires(){
   const F=R(nodes["be-fix"]), G=R(nodes["gate"]);
   const yb=Math.max(F.b,G.b)+18;
   out+=`<path class="wire loop" d="M${F.cx},${F.b} L${F.cx},${yb} L${G.cx},${yb} L${G.cx},${G.b+2}" marker-end="url(#a-loop)"/>`;
-  out+=`<text class="wlabel" x="${(F.cx+G.cx)/2}" y="${yb+14}" text-anchor="middle">↻ 6 · re-check · max 2 rounds</text>`;
+  out+=`<text class="wlabel" x="${(F.cx+G.cx)/2}" y="${yb+14}" text-anchor="middle">↻ 6 · re-run UI + API tests, then re-check · max 2 rounds</text>`;
   // after StoryRail: CI green → CDD → QA testing → sprint review (static, dashed)
   const C=R(nodes["cicd"]), D=R(nodes["x-cdd"]), Q=R(nodes["x-qa"]), V=R(nodes["x-review"]);
   const mx=(C.r+D.l)/2;
@@ -846,10 +846,12 @@ const DEMO_NOTES={
     "Round 1 fixes: upgraded jackson-databind from 2.15.2 to 2.17.2 for the NexusIQ Severe violation, and shared the duplicated date format Sonar reported."],
   "ui-tests":["9 new Playwright tests for FE-AC1 to FE-AC3 on the mocked API, using the test ids from Varunesh.",
     "Covered the empty, error and many-loans states, plus keyboard focus after closing the panel.",
-    "Added axe and 360 px checks for the new panel. 82 UI tests green in total."],
+    "Added axe and 360 px checks for the new panel. 82 UI tests green in total.",
+    "Round 2: re-ran the whole suite after Varunesh's fixes and added the regression test for R1-01 he asked for. 83/83 green."],
   "api-tests":["Started the backend locally and ran the scenarios against localhost:8080.",
     "12 new Cucumber scenarios for BE-AC4 to BE-AC6, one rule per AC; each scenario cleans up, so the testers can reuse them on QA.",
-    "Every response is checked against the contract. 130 scenarios green."],
+    "Every response is checked against the contract. 130 scenarios green.",
+    "Round 2: rebuilt the backend with Meysam's jackson-databind upgrade and re-ran all 130 scenarios: still green, no JSON changes."],
   "gate":["Round 1, all local: Sonar through the Maven plugin and sonar-scanner, Fortify SCA on the backend, the NexusIQ CLI on both.",
     "Sonar: quality gate failed on one critical issue, a duplicated date format. Fortify: no critical or high. NexusIQ: jackson-databind 2.15.2 has a Severe policy violation.",
     "Round 2: every gate passed, 0 findings."],
@@ -1219,18 +1221,23 @@ if(document.fonts) document.fonts.ready.then(drawWires);
     [62,S,"be-fix","running",60,"Upgrading jackson-databind for NexusIQ"],[62,S,"fe-fix","running",70,"Live region + regression test for R1-01"],
     [66,S,"fe-fix","done",100,"3/3 fixed · 0 disputed"],[67,S,"be-fix","done",100,"3/3 fixed · 0 disputed"],[67,F,0,0,0,6],
     [67,L,"be-fix","ok","jackson-databind 2.17.2, date format shared; 2 regression tests"],
-    [68,R,"phase","Review + scans"],[68,S,"reviewer","running",50,"Round 2: checking the fixes"],[68,S,"gate","running",40,"Round 2: re-scanning"],
-    [73,S,"gate","done",100,"0 findings · Sonar ok · Fortify ok · NexusIQ ok"],[73,"scans",0,0,0],
-    [74,S,"reviewer","done",100,"APPROVE · 0 / 0 / 0"],[74,L,"reviewer","ok","Round 2: APPROVE, every AC met and tested"],
-    [75,R,"phase","Release"],[75,S,"cicd","running",10,"Opening merge requests in 3 repos"],
-    [79,S,"cicd","waiting",30,"MRs green: backend !12, API tests !8, frontend !15. Merge?"],[79,L,"cicd","info","All MR pipelines green; waiting for your OK to merge"],
-    [84,S,"cicd","running",50,"Backend merged · CI running on main"],[84,L,"orchestrator","info","You approved the merge"],
-    [89,S,"cicd","running",70,"API tests merged · CI running on main"],[93,S,"cicd","running",85,"Frontend merged · CI running on main"],
-    [98,S,"cicd","done",100,"3 MRs merged · CI green on main"],[98,L,"cicd","ok","Backend, API tests and frontend pipelines green on main"],
-    [99,R,"phase","Done"],[99,L,"orchestrator","ok","#51 labelled Ready for QA; over to the team for CDD and QA testing"],
-    [99,"end"]
+    [68,R,"phase","Re-run tests"],[68,L,"orchestrator","info","Fixes changed code on both sides: re-running the UI and API suites"],
+    [68,S,"ui-tests","running",20,"Round 2: re-running the UI tests"],[68,S,"api-tests","running",20,"Round 2: re-running the API scenarios"],
+    [71,S,"ui-tests","running",70,"Round 2: 83 tests, incl. the R1-01 regression"],[71,S,"api-tests","running",75,"Round 2: backend rebuilt with jackson 2.17.2"],
+    [73,S,"ui-tests","done",100,"Round 2: 83/83 green"],[73,M,"ui",83,83],[73,S,"api-tests","done",100,"Round 2: 130/130 green"],[73,M,"api",130,130],
+    [73,L,"api-tests","ok","Round 2: all 130 scenarios still green after the jackson upgrade"],
+    [74,R,"phase","Review + scans"],[74,S,"reviewer","running",50,"Round 2: checking the fixes"],[74,S,"gate","running",40,"Round 2: re-scanning"],
+    [79,S,"gate","done",100,"0 findings · Sonar ok · Fortify ok · NexusIQ ok"],[79,"scans",0,0,0],
+    [80,S,"reviewer","done",100,"APPROVE · 0 / 0 / 0"],[80,L,"reviewer","ok","Round 2: APPROVE, every AC met and tested"],
+    [81,R,"phase","Release"],[81,S,"cicd","running",10,"Opening merge requests in 3 repos"],
+    [85,S,"cicd","waiting",30,"MRs green: backend !12, API tests !8, frontend !15. Merge?"],[85,L,"cicd","info","All MR pipelines green; waiting for your OK to merge"],
+    [90,S,"cicd","running",50,"Backend merged · CI running on main"],[90,L,"orchestrator","info","You approved the merge"],
+    [95,S,"cicd","running",70,"API tests merged · CI running on main"],[99,S,"cicd","running",85,"Frontend merged · CI running on main"],
+    [104,S,"cicd","done",100,"3 MRs merged · CI green on main"],[104,L,"cicd","ok","Backend, API tests and frontend pipelines green on main"],
+    [105,R,"phase","Done"],[105,L,"orchestrator","ok","#51 labelled Ready for QA; over to the team for CDD and QA testing"],
+    [105,"end"]
   ];
-  const LOOP=112; const STATIONS=AGENTS.map(a=>a.id);
+  const LOOP=118; const STATIONS=AGENTS.map(a=>a.id);
   let start=0, next=0, feed=[];
   function reset(){
     state=Object.fromEntries(STATIONS.map(s=>[s,{status:"pending",progress:0,note:""}]));

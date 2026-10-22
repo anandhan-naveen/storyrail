@@ -31,18 +31,23 @@
     [62,S,"be-fix","running",60,"Upgrading jackson-databind for NexusIQ"],[62,S,"fe-fix","running",70,"Live region + regression test for R1-01"],
     [66,S,"fe-fix","done",100,"3/3 fixed · 0 disputed"],[67,S,"be-fix","done",100,"3/3 fixed · 0 disputed"],[67,F,0,0,0,6],
     [67,L,"be-fix","ok","jackson-databind 2.17.2, date format shared; 2 regression tests"],
-    [68,R,"phase","Review + scans"],[68,S,"reviewer","running",50,"Round 2: checking the fixes"],[68,S,"gate","running",40,"Round 2: re-scanning"],
-    [73,S,"gate","done",100,"0 findings · Sonar ok · Fortify ok · NexusIQ ok"],[73,"scans",0,0,0],
-    [74,S,"reviewer","done",100,"APPROVE · 0 / 0 / 0"],[74,L,"reviewer","ok","Round 2: APPROVE, every AC met and tested"],
-    [75,R,"phase","Release"],[75,S,"cicd","running",10,"Opening merge requests in 3 repos"],
-    [79,S,"cicd","waiting",30,"MRs green: backend !12, API tests !8, frontend !15. Merge?"],[79,L,"cicd","info","All MR pipelines green; waiting for your OK to merge"],
-    [84,S,"cicd","running",50,"Backend merged · CI running on main"],[84,L,"orchestrator","info","You approved the merge"],
-    [89,S,"cicd","running",70,"API tests merged · CI running on main"],[93,S,"cicd","running",85,"Frontend merged · CI running on main"],
-    [98,S,"cicd","done",100,"3 MRs merged · CI green on main"],[98,L,"cicd","ok","Backend, API tests and frontend pipelines green on main"],
-    [99,R,"phase","Done"],[99,L,"orchestrator","ok","#51 labelled Ready for QA; over to the team for CDD and QA testing"],
-    [99,"end"]
+    [68,R,"phase","Re-run tests"],[68,L,"orchestrator","info","Fixes changed code on both sides: re-running the UI and API suites"],
+    [68,S,"ui-tests","running",20,"Round 2: re-running the UI tests"],[68,S,"api-tests","running",20,"Round 2: re-running the API scenarios"],
+    [71,S,"ui-tests","running",70,"Round 2: 83 tests, incl. the R1-01 regression"],[71,S,"api-tests","running",75,"Round 2: backend rebuilt with jackson 2.17.2"],
+    [73,S,"ui-tests","done",100,"Round 2: 83/83 green"],[73,M,"ui",83,83],[73,S,"api-tests","done",100,"Round 2: 130/130 green"],[73,M,"api",130,130],
+    [73,L,"api-tests","ok","Round 2: all 130 scenarios still green after the jackson upgrade"],
+    [74,R,"phase","Review + scans"],[74,S,"reviewer","running",50,"Round 2: checking the fixes"],[74,S,"gate","running",40,"Round 2: re-scanning"],
+    [79,S,"gate","done",100,"0 findings · Sonar ok · Fortify ok · NexusIQ ok"],[79,"scans",0,0,0],
+    [80,S,"reviewer","done",100,"APPROVE · 0 / 0 / 0"],[80,L,"reviewer","ok","Round 2: APPROVE, every AC met and tested"],
+    [81,R,"phase","Release"],[81,S,"cicd","running",10,"Opening merge requests in 3 repos"],
+    [85,S,"cicd","waiting",30,"MRs green: backend !12, API tests !8, frontend !15. Merge?"],[85,L,"cicd","info","All MR pipelines green; waiting for your OK to merge"],
+    [90,S,"cicd","running",50,"Backend merged · CI running on main"],[90,L,"orchestrator","info","You approved the merge"],
+    [95,S,"cicd","running",70,"API tests merged · CI running on main"],[99,S,"cicd","running",85,"Frontend merged · CI running on main"],
+    [104,S,"cicd","done",100,"3 MRs merged · CI green on main"],[104,L,"cicd","ok","Backend, API tests and frontend pipelines green on main"],
+    [105,R,"phase","Done"],[105,L,"orchestrator","ok","#51 labelled Ready for QA; over to the team for CDD and QA testing"],
+    [105,"end"]
   ];
-  const LOOP=112; const STATIONS=AGENTS.map(a=>a.id);
+  const LOOP=118; const STATIONS=AGENTS.map(a=>a.id);
   let start=0, next=0, feed=[];
   function reset(){
     state=Object.fromEntries(STATIONS.map(s=>[s,{status:"pending",progress:0,note:""}]));

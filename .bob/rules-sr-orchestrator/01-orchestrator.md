@@ -24,7 +24,7 @@ Two ways to hand over a stage, both returning a summary to you:
 
 - **Subtask** in the stage's mode (`new_task` with the mode slug from the table): its own visible conversation, and the
   mode's file limits (`fileRegex`) are enforced by Bob. Used for single-agent stages and whenever only one lane is in the run.
-- **Parallel subagents** for the stages with two independent agents: **Build** (FE ∥ BE), **Isolated tests** (UI ∥ API),
+- **Parallel subagents** for the stages with two independent agents: **Build** (FE ∥ BE), **Isolated tests** and their re-run after fixes (UI ∥ API),
   **Review + scans** (reviewer ∥ scan) and **Fix** (FE fixes ∥ BE fixes). Start both as `general` subagents **at the same
   time** (one message, two spawns). A `general` subagent has full tools and does not get the mode's file limits, so the
   **lane check** below is what keeps it in its lane.
@@ -34,8 +34,8 @@ Two ways to hand over a stage, both returning a summary to you:
 | 1 Requirement analysis | `sr-req-fetch` | `req-fetch` | `req-fetch` |
 | 2 Frontend dev | `sr-fe-dev` | `fe-dev` | `fe-dev` |
 | 2 Backend dev | `sr-be-dev` | `be-dev` | `be-dev` |
-| 3 Isolated UI automation | `sr-ui-tests` | `ui-tests` | `ui-tests` |
-| 3 API automation | `sr-api-tests` | `api-tests` | `api-tests` |
+| 3/6 Isolated UI automation | `sr-ui-tests` | `ui-tests` | `ui-tests` |
+| 3/6 API automation | `sr-api-tests` | `api-tests` | `api-tests` |
 | 4/6 Tech lead review | `sr-reviewer` | `reviewer` | `reviewer` |
 | 4/6 Quality scans | `sr-scan` | `gate` | `scan` |
 | 5 Frontend fixes | `sr-fe-dev` (fix mode) | `fe-fix` | `fe-fix` |
@@ -156,8 +156,18 @@ lane's developer once (as in step 5, with the findings file), then re-run the te
   a contract change goes back through sr-req-fetch.
 - Each developer writes `runs/issue-N/fixes-round<k>-<fe|be>.md`. Update `findings … <fixed>`, commit in each changed repo.
 
-**6. Re-check.** Back to step 4 with k+1: the reviewer checks the fixes and the scans run again on the fixed code.
-Max **2 fix rounds**; still not meeting the gate after round 2 → **ASK** the user with the open findings.
+**6. Re-run the tests, then re-check.**
+- **Re-run the isolated tests first.** The fixes changed code after step 3 passed, so `run phase "Re-run tests"`,
+  `lanes clean`, then **sr-ui-tests** (if frontend code changed in this round) ∥ **sr-api-tests** (if backend or API-test
+  code changed) in **"re-run mode, round k"**, with the developers' fix responses, as parallel subagents; then
+  `lanes check ui-tests api-tests`. A side whose code didn't change in this round is not re-run. They run the whole
+  existing suites, update a test only when a fix intentionally changed what it relied on, and add the regression tests
+  a fix response asks for.
+- A test that fails because a fix broke an AC → back to that developer in fix mode once (same round k), then re-run.
+  Failing again → **ASK**. Commit the test changes in each repo.
+- **Then the re-check:** back to step 4 with k+1. The tech lead checks the fixes and the scans run again, on fixed code
+  with green tests.
+- Max **2 fix rounds**; still not meeting the gate after round 2 → **ASK** the user with the open findings.
 
 **7. Release: merge, then CI.** `run phase Release`, `set cicd running 10 "opening merge requests"`.
 - For each repo in the run: `(cd DIR_L && git push -u origin HEAD)`, then

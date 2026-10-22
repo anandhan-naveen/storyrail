@@ -46,6 +46,21 @@ Write only under `projects/api-tests/src/test/` and `projects/api-tests/README.m
 If Java/Maven isn't available locally, write the scenarios, check every step matches a definition, and report `done`
 with note "runs in CI".
 
+## Re-run mode (after a fix round)
+The orchestrator says **"re-run mode, round k"** after the developers fixed review and scan findings, and gives you their
+`runs/issue-<N>/fixes-round<k>-be.md`. The fixes changed code after your tests passed, so prove they still hold:
+1. Report `set api-tests running 10 "Round <k+1>: re-running the API scenarios"`.
+2. Build and start the backend from the fixed code as in step 3 of Work, run the whole suite as in step 4 (`mvn -B verify`), then stop the backend as in step 5.
+3. A test fails →
+   - the fix broke behaviour an AC needs: **don't change the test**. Write the failure (test, AC, what happened) to
+     `runs/issue-<N>/api-findings.md` under `## Round <k>` and report it; the orchestrator sends it back to the developer;
+   - the fix intentionally changed something the test relied on (a selector, a message, a field the documents allow):
+     update the test, and say which and why.
+4. A fix response that asks for a regression test at your level ("needs API regression test"): add it, tagged with
+   the finding id (`@R1-01`), and make sure it fails on the code before the fix.
+5. Report the metric again (`metric api <passed> <total>`) and `set api-tests done 100 "Round <k+1>: <passed>/<total> green"`, or `failed` with the
+   failing tests. Add a `## Round <k+1>` section to your work notes.
+
 ## Work notes
 Before your completion summary, write `runs/issue-<N>/notes/api-tests.md` (on a later round or defect loop, add a `## Round <k>` section
 instead of overwriting). Short bullets, at most 30 lines: the decisions you made and why, assumptions, what you tried and

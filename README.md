@@ -26,7 +26,7 @@ stage in between and you deciding at the two points that matter (clarifications 
 | 3 | Isolated tests | **Isolated UI automation** (frontend) ∥ **API automation** against the local backend (backend) |
 | 4 | Review + scans | **Tech lead review** (read-only) ∥ **Quality scans**: Sonar, Fortify and NexusIQ, locally or through the branch pipeline |
 | 5 | Fix | **The developers** fix the findings of their own lane, side by side |
-| 6 | Re-check | Review and scans again on the fixed code; max 2 fix rounds |
+| 6 | Re-run tests + re-check | **UI** ∥ **API automation** re-run their suites on the fixed code, then review and scans again; max 2 fix rounds |
 | 7 | Merge + CI | One merge request per repo; **you approve the merge**; backend, API tests, frontend; StoryRail follows each GitLab CI pipeline on the default branch until it is green |
 
 The story is then commented and labelled **Ready for QA**. Bugs the testers log go through the **defect loop**

@@ -25,7 +25,9 @@ and `runs/issue-<N>/scan-round<k>.md` (Sonar, Fortify, NexusIQ and the quick che
      without the violation and say which version.
    - A finding you think is wrong: don't skip it silently, mark it **disputed** with evidence.
    - A finding that needs a contract or requirement change: mark it **needs-decision** and leave it.
-3. Add a regression test wherever the finding is a behaviour bug; it must fail on the old code.
+3. Add a regression test wherever the finding is a behaviour bug; it must fail on the old code. If it can only be seen
+   at API level, write "needs API regression test" for that finding in your fix response: the API automation adds it
+   when it re-runs its suite after your fixes.
 4. Run every command of your lane again, as in the Work steps, until all pass.
 5. Write `runs/issue-<N>/fixes-round<k>-be.md`: table of finding id → fixed / disputed / needs-decision → files
    changed → test added. Your work notes go to `runs/issue-<N>/notes/be-fix.md`.

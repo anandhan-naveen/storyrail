@@ -530,7 +530,7 @@ function drawWires(){
   const F=R(nodes["be-fix"]), G=R(nodes["gate"]);
   const yb=Math.max(F.b,G.b)+18;
   out+=`<path class="wire loop" d="M${F.cx},${F.b} L${F.cx},${yb} L${G.cx},${yb} L${G.cx},${G.b+2}" marker-end="url(#a-loop)"/>`;
-  out+=`<text class="wlabel" x="${(F.cx+G.cx)/2}" y="${yb+14}" text-anchor="middle">↻ 6 · re-check · max 2 rounds</text>`;
+  out+=`<text class="wlabel" x="${(F.cx+G.cx)/2}" y="${yb+14}" text-anchor="middle">↻ 6 · re-run UI + API tests, then re-check · max 2 rounds</text>`;
   // after StoryRail: CI green → CDD → QA testing → sprint review (static, dashed)
   const C=R(nodes["cicd"]), D=R(nodes["x-cdd"]), Q=R(nodes["x-qa"]), V=R(nodes["x-review"]);
   const mx=(C.r+D.l)/2;
