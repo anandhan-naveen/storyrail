@@ -638,7 +638,6 @@ function setText(id,v){const e=$(id); if(e.textContent!==String(v)) e.textConten
 function bar(id,pct){$(id).style.width=Math.max(0,Math.min(100,pct||0))+"%";}
 
 function renderAgents(){
-  let done=0;
   AGENTS.forEach(a=>{
     const s=state[a.id]||{status:"pending"}; const el=nodes[a.id];
     const cls="box "+(s.status||"pending")+(a.human?" human":"");
@@ -646,11 +645,22 @@ function renderAgents(){
     el.querySelector(".pill").textContent=LABEL[s.status]||s.status||"queued";
     el.querySelector(".note").textContent=s.note||"";
     el.querySelector(".prog i").style.width=(s.status==="done"?100:(s.progress||0))+"%";
-    if(s.status==="done"&&!a.human) done++;
   });
-  const nAg=AGENTS.filter(a=>!a.human).length;
-  $("k-agents").innerHTML=done+"<small>/ "+nAg+"</small>"; bar("kb-agents",done/nAg*100);
+  const rp=runProgress();
+  $("k-agents").innerHTML=rp.done+"<small>/ "+rp.total+"</small>"; bar("kb-agents",rp.pct);
   drawWires();
+}
+// Run progress only moves forward: a step counts once it has finished, even when a later round (re-run, re-check)
+// runs it again. Steps the run doesn't need (skipped) leave the total.
+let progressRun="", everDone=new Set();
+function runProgress(){
+  const key=(run.startedAt||"")+"|"+(run.bugs||[]).join(",");
+  if(key!==progressRun){ progressRun=key; everDone=new Set(); }
+  const agents=AGENTS.filter(a=>!a.human);
+  agents.forEach(a=>{ if((state[a.id]||{}).status==="done") everDone.add(a.id); });
+  const counted=agents.filter(a=>(state[a.id]||{}).status!=="skipped");
+  const done=counted.filter(a=>everDone.has(a.id)).length, total=counted.length||1;
+  return {done,total,pct:run.endedAt?100:done/total*100};
 }
 function renderRun(){
   
@@ -956,8 +966,7 @@ function renderOrch(){
     const ms=memberState(m);
     if(m===lead){
       g.setAttribute("class","hub node "+ms.status);
-      const done=AGENTS.filter(a=>!a.human&&(state[a.id]||{}).status==="done").length, tot=AGENTS.filter(a=>!a.human).length;
-      const c=g.querySelector(".hprog"); const C=2*Math.PI*O.hub; c.setAttribute("stroke-dashoffset",C*(1-done/tot));
+      const c=g.querySelector(".hprog"); const C=2*Math.PI*O.hub; c.setAttribute("stroke-dashoffset",C*(1-runProgress().pct/100));
       g.querySelector(".hphase").textContent=run.endedAt?"Story signed off":run.phase?((ORCH_SMALL.matches?"":"Phase: ")+run.phase):"Waiting for a story";
       g.setAttribute("aria-label",m.name+", "+m.role+". "+(run.phase?"Phase "+run.phase:"No story running"));
       return;
