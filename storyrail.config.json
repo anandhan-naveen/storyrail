@@ -45,7 +45,7 @@
       {
         "id": "sindhu",
         "name": "Sindhu",
-        "role": "Business analyst",
+        "role": "Functional analyst",
         "kind": "intake",
         "stations": [
           "req-fetch"
