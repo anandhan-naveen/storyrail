@@ -1,89 +1,78 @@
-<p align="center"><img src="docs/brand/storyrail-wordmark.svg" alt="StoryRail: from user story to signed-off release" width="420"></p>
+<p align="center"><img src="docs/brand/storyrail-wordmark.svg" alt="StoryRail: from user story to green CI" width="420"></p>
 
 # StoryRail
 
-**StoryRail** puts a user story on rails: a squad of specialised AI agents takes it from the analyst's backlog issue
-to a signed-off release, with a human gate at both ends and a quality gate at every stage in between.
-The product it builds for the demo is a small **Library Catalog** (browse, search, filter, add, delete and toggle the
-availability of books), made of a frontend and a backend that live in **separate repos and deploy separately**.
+**StoryRail** puts a user story on rails: a squad of specialised AI agents in **IBM Bob** takes it from the moment the
+functional documents are ready in GitLab to a **green CI pipeline** on the default branch, with a quality gate at every
+stage in between and you deciding at the two points that matter (clarifications and the merge).
 
-## The five repos
+## Where StoryRail fits in the squad
 
-| Repo | What | Deploys to |
+| Who | What | With StoryRail? |
 |---|---|---|
-| [squad-backlog](https://github.com/storyrail-squad/squad-backlog) | The squad's user stories and bugs, nothing else | – |
-| **storyrail** (this repo) | The hub: agents, `/storyrail` command, live dashboard, every run's reports | – |
-| [library-frontend](https://github.com/storyrail-squad/library-frontend) | React app + UI automation, own CI/CD | [GitHub Pages (QA)](https://storyrail-squad.github.io/library-frontend/) |
-| [library-backend](https://github.com/storyrail-squad/library-backend) | Spring Boot API, **owns the API contract**, own CI/CD | Render (QA) |
-| [library-api-tests](https://github.com/storyrail-squad/library-api-tests) | Backend acceptance tests in Cucumber + Java: run isolated on every backend PR, and `@qa` against the QA API after each deploy | – |
-
-StoryRail runs from this repo. `node scripts/storyrail-workspace.mjs sync` clones the two projects into `projects/`
-(not committed here), and the agents work across them: a story that touches both gets a branch and a PR in each repo,
-both pointing at the same backlog issue. The backend PR merges first, so the frontend always builds against a published
-contract. All repo names live in [`storyrail.config.json`](storyrail.config.json).
+| **Product owner** | Gets the requirement from the business | Outside: people |
+| **Functional analyst** | Writes the **Screen document** (frontend) and the **API document** (backend), attaches them to the user story in GitLab, explains it at the 3 amigos meeting | Outside: people |
+| **StoryRail** | Steps 1–7 below, from the GitLab story to green CI | **The agents** |
+| **The team** | Deploys to QA with CDD | Outside: CDD can't be followed from here |
+| **Testers** | Prepared test cases, E2E UI and API automation and manual tests in QA; log defects as GitLab bugs | Outside; bugs come back through the defect loop |
+| **Analyst + PO** | Review the implementation at the sprint review and sign off | Outside: people |
 
 ## The rail
 
 | # | Stage | Who |
 |---|---|---|
-| 1 | Requirements | You run `/storyrail <issue>` → **Requirement fetch** agent reads that backlog issue (user story or bug) |
-| 2 | Build | **Frontend dev** (library-frontend) ∥ **Backend dev** (library-backend), each with unit tests |
-| 3 | Isolated tests | **Isolated UI automation** (after FE) ∥ **API automation**, Cucumber + Java in library-api-tests (after BE) |
-| 4 | Review + local scan | **Strict reviewer** (read-only) ∥ **Local quality scan** (Sonar rules, SAST, secrets, dependencies) |
-| 5 | Fix | **Review fixer** fixes both reports in one pass; re-check, max 2 rounds |
-| 6 | CI/CD → QA | One PR per touched repo; each pipeline re-runs every check and deploys its own part to QA (backend, then API tests, then frontend) |
-| 7 | QA environment | **Smoke test** per project → **API acceptance** (`@qa` Cucumber scenarios on the QA API) → **Manual QA** on the deployed QA URL |
-| 8 | Sign-off | **You** accept the story for UAT / production |
+| 1 | Requirement analysis | You run `/storyrail <issue>` → **Sindhu** reads the GitLab story and its Screen and API documents. Anything unclear: she asks, the orchestrator asks **you** in the chat and posts the answers on the issue |
+| 2 | Build | **Frontend dev** ∥ **Backend dev**, each with unit tests. Only the lanes the story needs; the other developer stays idle |
+| 3 | Isolated tests | **Isolated UI automation** (frontend) ∥ **API automation** against the local backend (backend) |
+| 4 | Review + scans | **Tech lead review** (read-only) ∥ **Quality scans**: Sonar, Fortify and NexusIQ, locally or through the branch pipeline |
+| 5 | Fix | **The developers** fix the findings of their own lane, side by side |
+| 6 | Re-check | Review and scans again on the fixed code; max 2 fix rounds |
+| 7 | Merge + CI | One merge request per repo; **you approve the merge**; backend, API tests, frontend; StoryRail follows each GitLab CI pipeline on the default branch until it is green |
 
-Defects found in QA go through a shorter **defect loop** (bug issue in the backlog → fix in the affected project only →
-regression test → diff review + scan → CI/CD → smoke → targeted re-test). Full definitions: [docs/storyrail/PIPELINE.md](docs/storyrail/PIPELINE.md).
+The story is then commented and labelled **Ready for QA**. Bugs the testers log go through the **defect loop**
+(`/storyrail fix <bug>`): the same rail for the affected lane only, with a regression test. Details:
+[docs/storyrail/PIPELINE.md](docs/storyrail/PIPELINE.md).
 
 ## How to run it
 
-One-time setup on your Mac: [docs/storyrail/SETUP.md](docs/storyrail/SETUP.md). Run **one story or bug at a time**:
-the dashboard and your working folder follow a single run.
+One-time setup: [docs/storyrail/SETUP.md](docs/storyrail/SETUP.md) (GitLab token, the projects and the scanners in
+`storyrail.config.json`). Run **one story or bug at a time**: the dashboard and your working folder follow a single run.
 
 **Before each run**
 
 ```bash
 cd storyrail
-git switch main && git pull
-node scripts/storyrail-workspace.mjs sync    # clones or updates library-frontend, library-backend and library-api-tests in projects/
-node scripts/storyrail-dashboard.mjs         # leave this terminal open
+git switch bob && git pull
+node scripts/storyrail-gitlab.mjs whoami      # GitLab and your token work
+node scripts/storyrail-workspace.mjs sync     # clones or updates the project repos in projects/
+node scripts/storyrail-dashboard.mjs          # leave this terminal open
 ```
 
-Open the `storyrail` folder in **IBM Bob**, and open **http://localhost:4800** on a second screen. The dashboard comes
-alive as soon as the run starts.
+Open the `storyrail` folder in **IBM Bob**, and **http://localhost:4800** on a second screen.
 
-### A. A new user story
+### A. A user story
 
-1. **The analyst creates the issue in [squad-backlog](https://github.com/storyrail-squad/squad-backlog)** with the **User story** template: the story ("As a … I want … so that …"),
-   numbered acceptance criteria (`AC1`, `AC2`, …) and the **Frontend** / **Backend** ticks. Note the number, e.g. **#51**.
-2. **Start the run** in the Bob chat: `/storyrail 51` (stories that belong together: `/storyrail 51 52`).
+1. **The story is ready in GitLab:** the story, numbered acceptance criteria, the **Frontend** / **Backend** ticks, and
+   the **Screen document** and **API document** attached (template: `docs/storyrail/gitlab-templates/`). Note the number, e.g. **#51**.
+2. **Start the run** in the Bob chat: `/storyrail 51`.
 3. **Answer when it stops.** It only pauses here:
 
    | When | It asks | You answer |
    |---|---|---|
-   | Requirement fetch | Questions about unclear acceptance criteria (only if any) | Your answers; it posts them on the issue |
-   | Before merge | "PRs are green: backend #X, API tests #Z, frontend #Y. Merge and deploy to QA?" | **yes** |
-   | After manual QA | Which defects to fix now (only if QA found any) | e.g. "fix all majors, rest to backlog" |
-   | Sign-off | "Approve?" | **approve** |
+   | Requirement analysis | Questions about the story or the documents (only if any) | Your answers, after checking with the analyst or PO if needed; they're posted on the issue |
+   | Before merge | "Merge requests are green: backend !X, API tests !Z, frontend !Y. Merge them and run CI on main?" | **yes** |
+   | Something fails twice | What went wrong and what it needs from you | Your call |
 
-4. **Result:** each repo's PR is merged and deployed (backend and its API tests first, then the [frontend QA site](https://storyrail-squad.github.io/library-frontend/)),
-   the backlog issue gets a summary comment with every PR and is closed, and the reports are saved here in `runs/issue-51/`.
+4. **Result:** each repo's merge request is merged, every CI pipeline on the default branch is green, the issue has a
+   summary comment and the **Ready for QA** label, and the run's records are in `runs/issue-51/` (with a merge request
+   for the hub). Deploying with CDD and testing in QA is then up to the team.
 
-Defects that manual QA finds *during* a story run are handled inside that run: StoryRail creates the bug issues and
-fixes them before sign-off. You don't need part B for those.
+### B. A bug the testers found
 
-### B. A new bug (found outside a story run)
-
-1. **The analyst creates the issue in squad-backlog** with the **Bug** template: steps to reproduce, expected, actual (with a screenshot
-   if possible), lane and severity. Note the number, e.g. **#52**.
-2. **Start the defect loop:** `/storyrail fix 52` (several bugs: `/storyrail fix 52 53`).
-3. **Answer when it stops:** questions about the bug (only if steps or expected are missing), and
-   "PR #X is green. Merge and deploy to QA?" → **yes**. Only the affected project gets a PR.
-4. **Result:** the fix ships with a regression test, the PR (in the project repo) closes the backlog issue, and manual QA re-tests it on the QA site and
-   comments **"Verified on QA"**. If it isn't fixed, the issue is reopened and you are asked what to do.
+1. The testers log it in GitLab: steps to reproduce, expected, actual, and the lane. Note the number, e.g. **#60**.
+2. `/storyrail fix 60`.
+3. Same pauses as above. Only the affected project gets a merge request, with a regression test.
+4. **Result:** merged, CI green, the bug is commented "ready for re-test in QA". The testers re-test it after the CDD deployment.
 
 ### Handy anytime
 
@@ -91,22 +80,18 @@ fixes them before sign-off. You don't need part B for those.
 |---|---|
 | See where a run is | `/storyrail status` |
 | Resume after you fixed or answered something | `continue` |
-| Keep your Mac awake during a run | `caffeinate -i` in another terminal |
+| See what's left to configure | `node scripts/storyrail-workspace.mjs todo` |
 
 ## What's in this repo
 
 | Path | What |
 |---|---|
-| `storyrail.config.json` | Backlog repo, project repos, local paths, workflow names, QA URL |
+| `storyrail.config.json` | GitLab, backlog and project repos, scanners, merge settings, the squad |
 | `.bob/custom_modes.yaml`, `.bob/rules-sr-*/`, `.bob/commands/storyrail.md` | The agents as IBM Bob custom modes (with per-lane edit limits), their briefs and the `/storyrail` command; conventions in [.bob/rules/01-project-guide.md](.bob/rules/01-project-guide.md) |
+| `scripts/storyrail-gitlab.mjs` | GitLab for the agents: issues and attachments, comments, labels, merge requests, merges, pipelines (personal access token) |
 | `scripts/storyrail-workspace.mjs` | Clones/updates the project repos into `projects/` |
-| `scripts/storyrail-status.mjs`, `scripts/storyrail-dashboard.mjs`, `storyrail-dashboard/` | Live dashboard (http://localhost:4800): the orchestrator handing out work (Orchestration), the squad as named members with live status and a chat per member, plus the rail diagram |
+| `scripts/storyrail-lanes.mjs` | Checks that agents running side by side stayed in their lanes |
+| `scripts/storyrail-status.mjs`, `scripts/storyrail-dashboard.mjs`, `storyrail-dashboard/` | Live dashboard (http://localhost:4800): the orchestrator handing out work, the squad with a chat per member, and the rail diagram, including what happens outside StoryRail |
 | `docs/demo/index.html` | Stand-alone demo replay with sample data: open the file, no server or network needed (`node scripts/storyrail-build-demo.mjs` rebuilds it) |
-| `runs/issue-<N>/` | Every run's spec, review and scan reports, fixer responses, QA logs and evidence |
-| `docs/storyrail/` | [Pipeline and gates](docs/storyrail/PIPELINE.md), [setup](docs/storyrail/SETUP.md) |
-| `tests/manual/`, `docs/QUALITY-GATE.md` | Records of the first run (from before the repo split) |
-
-How to build, test and deploy each project: see the README of
-[library-frontend](https://github.com/storyrail-squad/library-frontend) and
-[library-backend](https://github.com/storyrail-squad/library-backend) and
-[library-api-tests](https://github.com/storyrail-squad/library-api-tests).
+| `runs/issue-<N>/` | Every run's documents, spec, review and scan reports, fix responses, work notes and release record |
+| `docs/storyrail/` | [Pipeline and gates](docs/storyrail/PIPELINE.md), [setup](docs/storyrail/SETUP.md), GitLab issue templates |

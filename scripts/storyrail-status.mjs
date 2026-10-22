@@ -7,14 +7,15 @@
 //   node scripts/storyrail-status.mjs set <station> <status> [progress] [note...]
 //   node scripts/storyrail-status.mjs log <station> <ok|warn|bad|info> <message...>
 //   node scripts/storyrail-status.mjs run <key> <value...>             e.g. run phase "Build"
-//   node scripts/storyrail-status.mjs loop <bug issues>                 defect loop inside a story run: resets fetch→QA stations, keeps the run
+//   node scripts/storyrail-status.mjs loop <bug issues>                 defect loop inside a run: resets every station, keeps the run
 //   node scripts/storyrail-status.mjs metric <unit-fe|unit-be|api|ui> <passed> <total>
 //   node scripts/storyrail-status.mjs findings <blocker> <major> <minor> <fixed>   (blocker/major/minor = still open; fixed = fixed so far)
 //   node scripts/storyrail-status.mjs security <high-critical vulns> <lint warnings>
+//   node scripts/storyrail-status.mjs scans <sonar> <fortify> <nexusiq>         blocking issues still open per scanner (- = not run)
 //   node scripts/storyrail-status.mjs end
 //   node scripts/storyrail-status.mjs show
 //
-// Stations: req-fetch fe-dev be-dev ui-tests api-tests reviewer gate fixer cicd smoke qa-api manual-tests signoff
+// Stations: req-fetch fe-dev be-dev ui-tests api-tests reviewer gate fe-fix be-fix cicd
 // Statuses: pending running done failed skipped waiting
 
 import { mkdirSync, readFileSync, writeFileSync, renameSync, openSync, closeSync, unlinkSync, statSync } from 'node:fs';
@@ -26,7 +27,7 @@ const DIR = join(ROOT, '.storyrail');
 const FILE = join(DIR, 'status.json');
 const LOCK = join(DIR, 'status.lock');
 
-const STATIONS = ['req-fetch', 'fe-dev', 'be-dev', 'ui-tests', 'api-tests', 'reviewer', 'gate', 'fixer', 'cicd', 'smoke', 'qa-api', 'manual-tests', 'signoff'];
+const STATIONS = ['req-fetch', 'fe-dev', 'be-dev', 'ui-tests', 'api-tests', 'reviewer', 'gate', 'fe-fix', 'be-fix', 'cicd'];
 const STATUSES = ['pending', 'running', 'done', 'failed', 'skipped', 'waiting'];
 const LEVELS = ['ok', 'warn', 'bad', 'info'];
 const MAX_FEED = 200;
@@ -187,6 +188,19 @@ switch (cmd) {
     });
     break;
   }
+  case 'scans': {
+    // blocking issues still open per scanner; "-" when that scanner is off or could not run
+    const parse = (v) => (v === '-' || v === undefined ? null : Number(v));
+    const [sonar, fortify, nexusiq] = args.map(parse);
+    if ([sonar, fortify, nexusiq].some((n) => n !== null && Number.isNaN(n))) fail('scans needs 3 numbers or "-": <sonar> <fortify> <nexusiq>');
+    withLock(() => {
+      const s = load();
+      s.run.metrics ??= {};
+      s.run.metrics.scans = { sonar, fortify, nexusiq };
+      save(s);
+    });
+    break;
+  }
   case 'findings': {
     const [blocker, major, minor, fixed] = args.map(Number);
     if ([blocker, major, minor, fixed].some((n) => Number.isNaN(n))) fail('findings needs 4 numbers: blocker major minor fixed');
@@ -210,5 +224,5 @@ switch (cmd) {
     console.log(JSON.stringify(load(), null, 2));
     break;
   default:
-    fail('commands: start, loop, set, log, run, metric, findings, security, end, show');
+    fail('commands: start, loop, set, log, run, metric, findings, security, scans, end, show');
 }

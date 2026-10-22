@@ -1,33 +1,97 @@
 {
-  "$comment": "Where StoryRail finds the backlog and the project repos. At the office, point these at your GitLab projects (see docs/storyrail/SETUP.md).",
+  "$comment": "StoryRail for the office squad: GitLab for stories, merge requests and CI; Sonar, Fortify and NexusIQ for quality scans. Fill in every TODO(office) value (`node scripts/storyrail-workspace.mjs todo` lists them). See docs/storyrail/SETUP.md.",
+  "gitlab": {
+    "$comment": "Your GitLab. Agents reach it with a personal access token (scope api) through scripts/storyrail-gitlab.mjs, or through the GitLab MCP server if it is configured in Bob. Never put the token in this file.",
+    "url": "TODO(office): https://gitlab.<company>",
+    "tokenEnv": "GITLAB_TOKEN",
+    "mcpServer": "gitlab"
+  },
   "backlog": {
-    "repo": "storyrail-squad/squad-backlog"
+    "$comment": "The GitLab project where the user stories and bugs live (with the Screen and API documents attached). Issue numbers are this project's issue IIDs.",
+    "project": "TODO(office): group/squad-backlog",
+    "readyLabel": "Ready for QA"
+  },
+  "hub": {
+    "$comment": "This repo (agents, dashboard, run records) on your GitLab.",
+    "project": "TODO(office): group/storyrail",
+    "defaultBranch": "main"
   },
   "projects": {
     "frontend": {
-      "repo": "storyrail-squad/library-frontend",
-      "cloneUrl": "https://github.com/storyrail-squad/library-frontend.git",
+      "project": "TODO(office): group/library-frontend",
+      "cloneUrl": "TODO(office): https://gitlab.<company>/group/library-frontend.git",
       "path": "projects/frontend",
-      "workflow": "Frontend CI/CD",
-      "qaUrl": "https://storyrail-squad.github.io/library-frontend/",
+      "defaultBranch": "main",
       "contract": "contract/openapi.yaml"
     },
     "backend": {
-      "repo": "storyrail-squad/library-backend",
-      "cloneUrl": "https://github.com/storyrail-squad/library-backend.git",
+      "project": "TODO(office): group/library-backend",
+      "cloneUrl": "TODO(office): https://gitlab.<company>/group/library-backend.git",
       "path": "projects/backend",
-      "workflow": "Backend CI/CD",
-      "qaUrl": null,
+      "defaultBranch": "main",
       "contract": "docs/api/openapi.yaml"
     },
     "apiTests": {
-      "repo": "storyrail-squad/library-api-tests",
-      "cloneUrl": "https://github.com/storyrail-squad/library-api-tests.git",
+      "project": "TODO(office): group/library-api-tests",
+      "cloneUrl": "TODO(office): https://gitlab.<company>/group/library-api-tests.git",
       "path": "projects/api-tests",
-      "workflow": "API tests CI",
-      "qaUrl": null,
+      "defaultBranch": "main",
       "contract": "contract/openapi.yaml",
-      "$comment": "Cucumber + Java acceptance tests for the backend. Part of the backend lane; a story branch here runs against the backend branch with the same name."
+      "$comment": "Cucumber + Java acceptance tests for the backend, run against the local backend. Part of the backend lane. Set to null if your API automation lives in the backend repo."
+    }
+  },
+  "mergeRequests": {
+    "$comment": "Step 7: one MR per repo in the run. waitForMrPipeline: wait for the MR pipeline before asking you to merge. mergeOrder: the order the MRs are merged in; after each merge StoryRail waits for the pipeline on the default branch.",
+    "squash": true,
+    "removeSourceBranch": true,
+    "waitForMrPipeline": true,
+    "mergeOrder": [
+      "backend",
+      "apiTests",
+      "frontend"
+    ]
+  },
+  "scans": {
+    "$comment": "Quality scans in steps 4 and 6. mode: local = run the command on your machine before anything is pushed; ci = push the branch, let its GitLab pipeline run the scan job, then read the result; off = skip. Commands run from the project folder; $BRANCH is the run branch. Tokens come from environment variables, never from this file.",
+    "sonar": {
+      "mode": "local",
+      "hostUrlEnv": "SONAR_HOST_URL",
+      "tokenEnv": "SONAR_TOKEN",
+      "commands": {
+        "frontend": "TODO(office): e.g. npx sonar-scanner -Dsonar.branch.name=$BRANCH",
+        "backend": "TODO(office): e.g. mvn -B -q verify sonar:sonar -Dsonar.branch.name=$BRANCH -Dsonar.qualitygate.wait=true",
+        "apiTests": null
+      },
+      "projectKeys": {
+        "frontend": "TODO(office)",
+        "backend": "TODO(office)"
+      },
+      "ciJob": "sonar",
+      "gate": "Quality gate passed and no open blocker or critical issue on new code"
+    },
+    "fortify": {
+      "mode": "local",
+      "commands": {
+        "frontend": "TODO(office): e.g. scancentral -url $SCANCENTRAL_URL start -bt none -upload -application <app> -version <version>",
+        "backend": "TODO(office): e.g. sourceanalyzer -b storyrail -clean && sourceanalyzer -b storyrail mvn -B -q package -DskipTests && sourceanalyzer -b storyrail -scan -f target/fortify.fpr",
+        "apiTests": null
+      },
+      "results": "TODO(office): e.g. FPRUtility -information -search -query \"[fortify priority order]:critical OR [fortify priority order]:high\" -project target/fortify.fpr",
+      "ciJob": "fortify",
+      "gate": "No critical or high issue"
+    },
+    "nexusIQ": {
+      "mode": "local",
+      "urlEnv": "NEXUS_IQ_URL",
+      "userEnv": "NEXUS_IQ_USER",
+      "tokenEnv": "NEXUS_IQ_TOKEN",
+      "commands": {
+        "frontend": "TODO(office): e.g. java -jar $NEXUS_IQ_CLI -s $NEXUS_IQ_URL -a $NEXUS_IQ_USER:$NEXUS_IQ_TOKEN -i <frontend-app-id> -t build -r nexus-iq.json .",
+        "backend": "TODO(office): e.g. java -jar $NEXUS_IQ_CLI -s $NEXUS_IQ_URL -a $NEXUS_IQ_USER:$NEXUS_IQ_TOKEN -i <backend-app-id> -t build -r nexus-iq.json target/",
+        "apiTests": null
+      },
+      "ciJob": "nexus-iq",
+      "gate": "No policy violation at Critical or Severe"
     }
   },
   "designSystem": {
@@ -51,7 +115,7 @@
     }
   },
   "squad": {
-    "$comment": "The squad as shown on the dashboard. Rename people freely; stations are the status ids each member reports on; brief = the agent's file name (sr-*) or 'orchestrator'.",
+    "$comment": "The squad as shown on the dashboard. stations = the status ids each member reports on; brief = the mode's rule folder (sr-*) or 'orchestrator'; outOfScope = a person who works outside StoryRail (shown greyed, can't be asked).",
     "members": [
       {
         "id": "naveen",
@@ -60,7 +124,7 @@
         "kind": "lead",
         "stations": [],
         "brief": "orchestrator",
-        "about": "Runs the rail: hands each stage to the right person, checks every gate and asks you when a decision is yours."
+        "about": "Runs the rail: reads the GitLab story with Sindhu, hands each stage to the right person, checks every gate and asks you when a decision is yours."
       },
       {
         "id": "sindhu",
@@ -71,7 +135,7 @@
           "req-fetch"
         ],
         "brief": "sr-req-fetch",
-        "about": "Reads the backlog issue, makes every acceptance criterion testable and agrees the API contract."
+        "about": "Reads the GitLab user story with its Screen and API documents, makes every acceptance criterion testable and asks you when something is unclear."
       },
       {
         "id": "varunesh",
@@ -79,10 +143,11 @@
         "role": "Frontend developer",
         "kind": "dev",
         "stations": [
-          "fe-dev"
+          "fe-dev",
+          "fe-fix"
         ],
         "brief": "sr-fe-dev",
-        "about": "Builds the React screens with unit tests in library-frontend."
+        "about": "Builds the screens from the Screen document with unit tests, then fixes the review and scan findings for the frontend."
       },
       {
         "id": "meysam",
@@ -90,10 +155,11 @@
         "role": "Backend developer",
         "kind": "dev",
         "stations": [
-          "be-dev"
+          "be-dev",
+          "be-fix"
         ],
         "brief": "sr-be-dev",
-        "about": "Builds the Spring Boot API with unit tests in library-backend."
+        "about": "Builds the API from the API document with unit tests, then fixes the review and scan findings for the backend."
       },
       {
         "id": "antonello",
@@ -115,7 +181,7 @@
           "api-tests"
         ],
         "brief": "sr-api-tests",
-        "about": "Writes the Cucumber + Java acceptance scenarios for the API in library-api-tests."
+        "about": "Writes the Cucumber + Java acceptance scenarios and runs them against the local backend."
       },
       {
         "id": "priya",
@@ -126,7 +192,7 @@
           "reviewer"
         ],
         "brief": "sr-reviewer",
-        "about": "Reviews every change against the acceptance criteria, the contract and the conventions. Read-only."
+        "about": "Reviews every change against the acceptance criteria, the documents and the conventions. Read-only."
       },
       {
         "id": "subramanian",
@@ -137,18 +203,7 @@
           "gate"
         ],
         "brief": "sr-scan",
-        "about": "Runs lint, Sonar-class rules, SAST, secret and dependency scans before anything is pushed."
-      },
-      {
-        "id": "sandrine",
-        "name": "Sandrine",
-        "role": "Developer, review fixes",
-        "kind": "fix",
-        "stations": [
-          "fixer"
-        ],
-        "brief": "sr-fixer",
-        "about": "Fixes every review and scan finding in one pass, with regression tests."
+        "about": "Runs the Sonar, Fortify and NexusIQ scans on the change and reports what has to be fixed."
       },
       {
         "id": "charlotte",
@@ -156,39 +211,36 @@
         "role": "Release engineer",
         "kind": "ship",
         "stations": [
-          "cicd",
-          "smoke",
-          "qa-api"
+          "cicd"
         ],
         "brief": "orchestrator",
-        "about": "Opens the PRs, watches the pipelines, deploys to QA, and runs the smoke test and the API acceptance run on QA."
+        "about": "Opens the merge requests, merges after your OK and follows the GitLab CI pipeline on main until it is green. Deploying through CDD is done by the team."
       },
       {
         "id": "harri",
         "name": "Harri",
         "role": "QA tester",
         "kind": "qa",
-        "stations": [
-          "manual-tests"
-        ],
-        "brief": "sr-manual-qa",
-        "about": "Tests the deployed QA site like a user would and logs defects."
+        "stations": [],
+        "brief": null,
+        "about": "QA tester. Works outside StoryRail: tests the story in the QA environment and reports defects as GitLab issues.",
+        "outOfScope": "Tests in the QA environment after the CDD deployment: the prepared test cases, E2E automation and manual testing."
       },
       {
         "id": "laurence",
         "name": "Laurence",
         "role": "Product owner",
         "kind": "human",
-        "stations": [
-          "signoff"
-        ],
+        "stations": [],
         "brief": null,
-        "about": "The product owner: picks the issue, answers the squad's questions, approves the merge to QA and signs off the story."
+        "about": "Product owner. Works outside StoryRail: brings the requirement from the business and signs off at the sprint review.",
+        "outOfScope": "Talks to the business, and signs off the story with the functional analyst at the sprint review."
       }
     ],
     "outputs": {
       "req-fetch": [
-        "spec.md"
+        "spec.md",
+        "docs/*"
       ],
       "ui-tests": [
         "ui-findings.md"
@@ -202,14 +254,14 @@
       "gate": [
         "scan-round*.md"
       ],
-      "fixer": [
-        "response-round*.md"
+      "fe-fix": [
+        "fixes-round*-fe.md"
       ],
-      "manual-tests": [
-        "qa-charter.md",
-        "qa-cases.md",
-        "qa-log.md",
-        "qa-retest.md"
+      "be-fix": [
+        "fixes-round*-be.md"
+      ],
+      "cicd": [
+        "release.md"
       ]
     }
   }

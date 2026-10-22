@@ -4,8 +4,8 @@
 customModes:
   - slug: sr-orchestrator
     name: "StoryRail · Orchestrator"
-    description: "Runs a StoryRail story or defect loop from start to sign-off."
-    roleDefinition: "You are the StoryRail orchestrator. You take a backlog issue (user story or bug) through the squad of StoryRail modes, across the separate frontend, backend and API-test repos, to a signed-off release, enforce every gate and keep the live dashboard current. You never write product code or tests yourself."
+    description: "Runs a StoryRail story or defect loop, from the GitLab user story to a green CI pipeline on main."
+    roleDefinition: "You are the StoryRail orchestrator. You take a GitLab user story or bug, whose functional documents are ready, through the squad of StoryRail modes, across the frontend, backend and API-test repos, until the merged code's CI pipeline is green. You enforce every gate, keep the live dashboard current and relay clarification questions to the user. You never write product code or tests yourself."
     whenToUse: "Started by the /storyrail command with an issue number, `fix <bug issues>` or `status`."
     customInstructions: "Follow your brief in .bob/rules-sr-orchestrator/ exactly. Report progress only through node scripts/storyrail-status.mjs."
     groups:
@@ -15,51 +15,53 @@ customModes:
       - subtask
       - subagent
       - mode
+      - mcp
       - - edit
         - fileRegex: "^runs/.*"
           description: "Run reports only (runs/)"
   - slug: sr-req-fetch
-    name: "StoryRail · Requirement fetch"
-    description: "StoryRail requirement fetch. Reads one or more backlog issues (user stories or bugs), decides which lanes (frontend/backend) are needed, checks every acceptance criterion is testable, and writes the run spec plus any API contract changes."
-    roleDefinition: "You are the StoryRail requirement fetch agent. You read the GitHub issue you are given (user story or bug), decide the lanes, make every acceptance criterion testable and write the run spec. You never invent requirements."
+    name: "StoryRail · Requirement analysis"
+    description: "StoryRail requirement analysis. Reads the GitLab user story or bug with its Screen and API documents, decides the lanes (frontend/backend), makes every acceptance criterion testable and writes the run spec plus any API contract changes."
+    roleDefinition: "You are the StoryRail requirement analysis agent. You read the GitLab issue you are given and the functional documents attached to it, decide the lanes, make every acceptance criterion testable and write the run spec. You never invent requirements: anything unclear becomes a question."
     whenToUse: "Use at the start of every /storyrail run and defect loop."
     customInstructions: "Follow your brief in .bob/rules-sr-req-fetch/ exactly. Report progress only through node scripts/storyrail-status.mjs."
     groups:
       - read
       - execute
+      - mcp
       - - edit
         - fileRegex: "^(runs/.*|projects/backend/docs/api/openapi\\.yaml|projects/frontend/contract/openapi\\.yaml|projects/api-tests/contract/openapi\\.yaml)$"
-          description: "Run spec and the three contract files only"
+          description: "Run spec, downloaded documents and the three contract files only"
   - slug: sr-fe-dev
     name: "StoryRail · Frontend dev"
-    description: "StoryRail frontend developer. Implements the frontend part of a run spec in React + TypeScript with unit tests."
-    roleDefinition: "You are the StoryRail frontend developer: React 18 + TypeScript (strict), Vite, Vitest + Testing Library. You implement the frontend acceptance criteria of a run spec with unit tests and keep every frontend gate green."
-    whenToUse: "Use after requirement fetch when the spec's lanes include frontend."
+    description: "StoryRail frontend developer. Implements the frontend part of a run spec with unit tests (step 2), and fixes the frontend findings of the review and the quality scans (step 5)."
+    roleDefinition: "You are the StoryRail frontend developer: React 18 + TypeScript (strict), Vite, Vitest + Testing Library. You build the screens of the Screen document with unit tests, and you fix the review and scan findings in the frontend, keeping every frontend gate green."
+    whenToUse: "Step 2 when the spec's lanes include frontend; step 5 when the review or the scans found something in the frontend."
     customInstructions: "Follow your brief in .bob/rules-sr-fe-dev/ exactly. Report progress only through node scripts/storyrail-status.mjs."
     groups:
       - read
       - execute
       - mcp
       - - edit
-        - fileRegex: "^(projects/frontend/(?!tests/|contract/).*|runs/[^/]+/notes/fe-dev\\.md)$"
-          description: "library-frontend app code (not its tests or contract), plus its work notes"
+        - fileRegex: "^(projects/frontend/(?!contract/|\\.gitlab-ci\\.yml|\\.github/).*|runs/[^/]+/(notes/fe-(dev|fix)\\.md|fixes-round\\d+-fe\\.md))$"
+          description: "library-frontend code and tests (not its contract or CI), plus its notes and fix responses"
   - slug: sr-be-dev
     name: "StoryRail · Backend dev"
-    description: "StoryRail backend developer. Implements the backend part of a run spec in Java 21 / Spring Boot with unit tests."
-    roleDefinition: "You are the StoryRail backend developer: Java 21, Spring Boot 3.5, Maven, Spring Data JPA, Bean Validation, ProblemDetail errors. You implement the backend acceptance criteria of a run spec with unit tests and keep `mvn verify` green."
-    whenToUse: "Use after requirement fetch when the spec's lanes include backend."
+    description: "StoryRail backend developer. Implements the backend part of a run spec with unit tests (step 2), and fixes the backend findings of the review and the quality scans (step 5)."
+    roleDefinition: "You are the StoryRail backend developer: Java 21, Spring Boot 3.5, Maven, Spring Data JPA, Bean Validation, ProblemDetail errors. You build the API of the API document with unit tests, and you fix the review and scan findings in the backend and its API tests, keeping `mvn verify` green."
+    whenToUse: "Step 2 when the spec's lanes include backend; step 5 when the review or the scans found something in the backend."
     customInstructions: "Follow your brief in .bob/rules-sr-be-dev/ exactly. Report progress only through node scripts/storyrail-status.mjs."
     groups:
       - read
       - execute
       - - edit
-        - fileRegex: "^(projects/backend/(?!docs/api/).*|runs/[^/]+/notes/be-dev\\.md)$"
-          description: "library-backend app code (not its contract), plus its work notes"
+        - fileRegex: "^(projects/backend/(?!docs/api/|\\.gitlab-ci\\.yml|\\.github/).*|projects/api-tests/src/test/.*|runs/[^/]+/(notes/be-(dev|fix)\\.md|fixes-round\\d+-be\\.md))$"
+          description: "library-backend code (not its contract or CI) and the API tests, plus its notes and fix responses"
   - slug: sr-ui-tests
     name: "StoryRail · Isolated UI automation"
     description: "StoryRail isolated UI automation. Writes and runs Playwright tests for the frontend acceptance criteria against a local build with a mocked API."
     roleDefinition: "You are the StoryRail isolated UI automation engineer. You write Playwright tests for the frontend acceptance criteria against a local build with a mocked API, tagged with the AC they prove."
-    whenToUse: "Use after the frontend developer finishes."
+    whenToUse: "Step 3, after the frontend developer finishes."
     customInstructions: "Follow your brief in .bob/rules-sr-ui-tests/ exactly. Report progress only through node scripts/storyrail-status.mjs."
     groups:
       - read
@@ -69,59 +71,36 @@ customModes:
           description: "UI tests and findings only"
   - slug: sr-api-tests
     name: "StoryRail · API automation"
-    description: "StoryRail API automation. Writes and runs black-box Cucumber + Java (RestAssured) acceptance scenarios for the backend acceptance criteria in the library-api-tests repo, against the locally running backend."
-    roleDefinition: "You are the StoryRail API automation engineer. You write black-box Cucumber + Java (RestAssured) scenarios for the backend acceptance criteria in library-api-tests, tagged per AC and @qa for the QA run, using the OpenAPI contract as the oracle."
-    whenToUse: "Use after the backend developer finishes."
+    description: "StoryRail API automation. Writes and runs black-box Cucumber + Java (RestAssured) acceptance scenarios for the backend acceptance criteria, against the locally running backend."
+    roleDefinition: "You are the StoryRail API automation engineer. You write black-box Cucumber + Java (RestAssured) scenarios for the backend acceptance criteria, tagged per AC, using the API document and the OpenAPI contract as the oracle, and run them against the local backend."
+    whenToUse: "Step 3, after the backend developer finishes."
     customInstructions: "Follow your brief in .bob/rules-sr-api-tests/ exactly. Report progress only through node scripts/storyrail-status.mjs."
     groups:
       - read
       - execute
       - - edit
         - fileRegex: "^(projects/api-tests/(src/test/|README\\.md)|runs/).*"
-          description: "library-api-tests scenarios, steps and README, plus findings"
+          description: "API test scenarios, steps and README, plus findings"
   - slug: sr-reviewer
-    name: "StoryRail · Strict reviewer"
-    description: "StoryRail strict code reviewer. Read-only review of a run's changes against the issue's acceptance criteria, the contract and the project conventions. Blocks on any real defect."
-    roleDefinition: "You are the StoryRail strict code reviewer. You review a run's changes against the acceptance criteria, the API contract and the project conventions, and block on any real defect. You are read-only."
-    whenToUse: "Use after isolated tests pass, before sr-scan."
+    name: "StoryRail · Tech lead review"
+    description: "StoryRail tech lead / strict code reviewer. Read-only review of a run's changes against the acceptance criteria, the functional documents, the contract and the conventions. Blocks on any real defect."
+    roleDefinition: "You are the StoryRail tech lead and strict code reviewer. You review a run's changes against the acceptance criteria, the Screen and API documents, the API contract and the project conventions, and block on any real defect. You are read-only."
+    whenToUse: "Step 4 and step 6, beside sr-scan."
     customInstructions: "Follow your brief in .bob/rules-sr-reviewer/ exactly. Report progress only through node scripts/storyrail-status.mjs."
     groups:
       - read
       - execute
       - mcp
   - slug: sr-scan
-    name: "StoryRail · Local quality scan"
-    description: "StoryRail local quality scan. Runs lint, Sonar-class rules, SAST, secret and dependency scans on the local workspace and reports findings (does not fix them)."
-    roleDefinition: "You are the StoryRail local quality scan. You run lint, Sonar-class rules, SAST, secret and dependency scans on the local workspace and report findings. You do not fix code."
-    whenToUse: "Use after sr-reviewer, on the same round."
+    name: "StoryRail · Quality scans"
+    description: "StoryRail quality scans. Runs Sonar, Fortify and NexusIQ (locally or through the branch pipeline, as configured) plus the quick local checks, and reports the findings. Does not fix code."
+    roleDefinition: "You are the StoryRail quality engineer. You run the Sonar, Fortify and NexusIQ scans and the quick local checks on the run's changes and report every finding with its severity. You do not fix code."
+    whenToUse: "Step 4 and step 6, beside sr-reviewer."
     customInstructions: "Follow your brief in .bob/rules-sr-scan/ exactly. Report progress only through node scripts/storyrail-status.mjs."
     groups:
       - read
       - execute
+      - mcp
       - - edit
         - fileRegex: "^runs/.*"
           description: "Scan report only"
-  - slug: sr-fixer
-    name: "StoryRail · Review fixer"
-    description: "StoryRail review fixer. A fresh agent that fixes every finding from the strict review and the local quality scan in one pass, with regression tests, keeping all gates green."
-    roleDefinition: "You are the StoryRail review fixer. You did not write this code. You fix every finding from the strict review and the local scan in one pass, with regression tests, and keep every gate green."
-    whenToUse: "Use after sr-reviewer and sr-scan report."
-    customInstructions: "Follow your brief in .bob/rules-sr-fixer/ exactly. Report progress only through node scripts/storyrail-status.mjs."
-    groups:
-      - read
-      - execute
-      - - edit
-        - fileRegex: "^(projects/|runs/).*"
-          description: "Project code, tests and fix responses"
-  - slug: sr-manual-qa
-    name: "StoryRail · Manual QA"
-    description: "StoryRail manual QA. Exploratory testing of a story on the deployed QA environment (never a local build) after the smoke test passes. Logs defects; does not fix code."
-    roleDefinition: "You are the StoryRail manual QA tester. You test a story exploratorily on the deployed QA environment (never a local build), judge usability and accessibility like a human tester, and log defects. You do not fix code."
-    whenToUse: "Use after CI/CD has deployed to QA."
-    customInstructions: "Follow your brief in .bob/rules-sr-manual-qa/ exactly. Report progress only through node scripts/storyrail-status.mjs."
-    groups:
-      - read
-      - execute
-      - - edit
-        - fileRegex: "^(runs/|tests/manual/).*"
-          description: "QA charter, cases, logs and evidence"

@@ -86,12 +86,13 @@ h1{font-family:var(--f-display);font-weight:800;font-size:clamp(1.35rem,2.6vw,1.
 .board-head h2,.side h2{font-family:var(--f-display);font-weight:800;font-size:1.05rem;margin:0}
 .legend{display:flex;gap:12px;flex-wrap:wrap;font-size:.78rem;color:var(--muted)}
 .legend span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:-1px;background:var(--c)}
-.flow{position:relative;display:grid;grid-template-columns:repeat(9,minmax(124px,1fr));grid-template-rows:auto 26px auto auto 34px;column-gap:20px;row-gap:42px;min-width:1290px;padding:8px 8px 4px}
+.flow{position:relative;display:grid;grid-template-columns:repeat(8,minmax(124px,1fr));grid-template-rows:auto 26px auto auto 34px;column-gap:20px;row-gap:42px;min-width:1170px;padding:8px 8px 4px}
 svg.wires{position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-events:none;overflow:visible}
 .wire{fill:none;stroke:var(--muted);stroke-width:2;opacity:.55}
 .wire.flow-on{stroke:var(--run);opacity:1;stroke-dasharray:7 7;animation:dash .9s linear infinite}
 .wire.done{stroke:var(--ok);opacity:.9}
 .wire.loop{stroke:var(--c-fix-s);stroke-dasharray:4 5;opacity:.95}
+.wire.outside{stroke:var(--muted);stroke-dasharray:3 6;opacity:.6}
 .packet{fill:var(--run)}
 .wlabel{font-family:var(--f-mono);font-size:10.5px;fill:var(--muted)}
 
@@ -104,6 +105,11 @@ svg.wires{position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-eve
 .zone.local{background:color-mix(in srgb,var(--run) 3%,transparent)}
 .zone.qa{border-color:color-mix(in srgb,var(--c-qa-s) 60%,var(--line));background:color-mix(in srgb,var(--c-qa-s) 6%,transparent)}
 .zone.qa>span{color:var(--c-qa-s)}
+.zone.ci{border-color:color-mix(in srgb,var(--c-ship-s) 55%,var(--line));background:color-mix(in srgb,var(--c-ship-s) 5%,transparent)}
+.zone.ci>span{color:var(--c-ship-s)}
+.zone.outside{border-style:dotted;background:repeating-linear-gradient(135deg,transparent 0 10px,color-mix(in srgb,var(--line) 35%,transparent) 10px 11px)}
+.box.outside{opacity:.62;border-style:dashed;filter:grayscale(.55)}
+.box.outside .pill{background:transparent}
 .lane{position:relative;z-index:1;border-radius:12px;margin:-24px -9px -6px}
 .lane>span{position:absolute;top:3px;left:10px;font-family:var(--f-mono);font-size:.6rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .lane.fe{background:color-mix(in srgb,var(--c-dev-s) 7%,transparent)}
@@ -218,6 +224,7 @@ svg.wires{position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-eve
 .seat.done{border:1.5px solid var(--line);background:var(--canvas)} .seat.done .now i{background:var(--ok)}
 .seat.waiting{border:1.5px solid var(--wait);background:var(--wait-soft)} .seat.waiting .now i{background:var(--wait)}
 .seat.failed{border:1.5px solid var(--bad);background:var(--bad-soft)} .seat.failed .now i{background:var(--bad)}
+.seat.outside{border:1.5px dashed var(--line);opacity:.7} .seat.outside .av{filter:grayscale(.7)} .seat.outside .now span{font-style:italic}
 .seat.skipped{opacity:.55}
 
 /* ---------- Member drawer ---------- */
@@ -304,6 +311,9 @@ svg.wires{position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-eve
 #orch .hub .hrole{font:600 14px var(--f-body);fill:rgba(255,255,255,.8);text-anchor:middle}
 #orch .hub .hphase{font:700 13px var(--f-body);fill:#9ff0cd;text-anchor:middle}
 #orch .po .bg{stroke-dasharray:5 4}
+#orch .node.outside{opacity:.5} #orch .node.outside .bg{stroke-dasharray:5 4} #orch .node.outside .halo{display:none}
+#orch .spoke.outside{stroke-dasharray:2 6;opacity:.35}
+#orch .arc.outside{stroke-dasharray:3 7;opacity:.6} #orch .arc-lab.outside{font-style:italic}
 @media (max-width:700px){
   .orch{padding:14px 10px 10px}
   #orch{max-height:none}
@@ -329,7 +339,7 @@ svg.wires{position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-eve
       <div class="mark" aria-hidden="true"><svg viewBox="0 0 64 64"><defs><linearGradient id="sr-g" x1="8" y1="56" x2="58" y2="8" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#6a3cf0"/><stop offset=".55" stop-color="#2f6ff0"/><stop offset="1" stop-color="#13d6e8"/></linearGradient><mask id="sr-rails" maskUnits="userSpaceOnUse" x="0" y="0" width="64" height="64"><path d="M43 13H26c-7 0-11.5 4.6-11.5 10.5S19 34 26 34h12c7 0 11.5 4.4 11.5 10S45 54 38 54H11" fill="none" stroke="#fff" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/><path d="M43 13H26c-7 0-11.5 4.6-11.5 10.5S19 34 26 34h12c7 0 11.5 4.4 11.5 10S45 54 38 54H11" fill="none" stroke="#000" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></mask></defs><path d="M43 13H26c-7 0-11.5 4.6-11.5 10.5S19 34 26 34h12c7 0 11.5 4.4 11.5 10S45 54 38 54H11" fill="none" stroke="url(#sr-g)" stroke-opacity=".35" stroke-width="17" stroke-dasharray="2.6 4.4" stroke-linejoin="round"/><rect width="64" height="64" fill="url(#sr-g)" mask="url(#sr-rails)"/><path d="M41 4.5 57.5 13 41 21.5Z" fill="url(#sr-g)"/></svg></div>
       <div style="min-width:0">
         <h1 id="title">StoryRail</h1>
-        <p class="tag">From user story to signed-off release</p>
+        <p class="tag">From user story to green CI</p>
         <p class="sub" id="subtitle">Waiting for the orchestrator to start a run…</p>
       </div>
     </div>
@@ -348,7 +358,7 @@ svg.wires{position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-eve
     <div class="kpi"><div class="lab">API tests</div><div class="val" id="k-api">—</div><div class="bar"><i id="kb-api"></i></div></div>
     <div class="kpi"><div class="lab">UI tests</div><div class="val" id="k-ui">—</div><div class="bar"><i id="kb-ui"></i></div></div>
     <div class="kpi"><div class="lab">Review findings</div><div class="val" id="k-rev">—</div><div class="bar"><i id="kb-rev"></i></div></div>
-    <div class="kpi"><div class="lab">Vulns / lint</div><div class="val" id="k-sec">—</div><div class="bar"><i id="kb-sec"></i></div></div>
+    <div class="kpi"><div class="lab">Sonar · Fortify · NexusIQ</div><div class="val" id="k-sec">—</div><div class="bar"><i id="kb-sec"></i></div></div>
   </section>
 
   <div class="tabs" role="tablist" aria-label="Dashboard view">
@@ -372,7 +382,7 @@ svg.wires{position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-eve
   <section class="orch" id="view-orch" role="tabpanel" aria-labelledby="tab-orch">
     <div class="orch-head">
       <h2>How the orchestrator hands out the work</h2>
-      <p>The lit spoke is the hand-off happening now. Select anyone to see their work.</p>
+      <p>The lit spoke is the hand-off happening now. Greyed: people who work outside StoryRail. Select anyone to see their work.</p>
     </div>
     <p class="orch-now" id="orch-now" aria-live="polite"></p>
     <svg id="orch" viewBox="0 0 1000 790" role="group" aria-label="Orchestrator in the centre, squad members around, in rail order"></svg>
@@ -397,7 +407,7 @@ svg.wires{position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-eve
     </section>
     <section class="side" aria-label="User stories">
       <h2>User stories</h2>
-      <div class="issues" id="issues"><div class="empty">The GitHub issues for this run show here once the run starts.</div></div>
+      <div class="issues" id="issues"><div class="empty">The GitLab issues of this run show here once the run starts.</div></div>
       <div class="findings" id="findings" hidden>
         <h2 style="margin-top:6px">Review + scan findings</h2>
         <div class="sev"><span style="width:62px">Blocker</span><span class="b"><i id="sv-blocker" style="background:var(--bad)"></i></span><span class="n" id="sn-blocker">0</span></div>
@@ -434,21 +444,24 @@ svg.wires{position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-eve
 
 <script>
 (function(){
-const STEPS=[["Requirements","1"],["Build","2"],["Isolated tests","3"],["Review + local scan","4"],["Fix","5"],["CI/CD → QA","6"],["QA environment","7 / 9"],["Sign-off","9"]];
+const STEPS=[["Requirements","1","1"],["Build","2","2"],["Isolated tests","3","3"],["Review + scans","4","4"],["Fix","5","5"],["Merge + CI","7","6"],["After StoryRail: the team","","7 / 9"]];
 const AGENTS=[
- {id:"req-fetch",name:"Requirement fetch",role:"Agent: fetches the issue you name (user story or bug), checks the ACs, shares the API contract",col:1,row:"span",icon:"doc",kind:"intake"},
- {id:"fe-dev",name:"Frontend dev",role:"React + unit tests",col:2,row:3,icon:"code",kind:"dev",deps:["req-fetch"]},
- {id:"be-dev",name:"Backend dev",role:"Spring Boot + unit tests",col:2,row:4,icon:"code",kind:"dev",deps:["req-fetch"]},
+ {id:"req-fetch",name:"Requirement analysis",role:"Reads the GitLab story and its Screen and API documents; asks you when unclear",col:1,row:"span",icon:"doc",kind:"intake"},
+ {id:"fe-dev",name:"Frontend dev",role:"Screens from the Screen document + unit tests",col:2,row:3,icon:"code",kind:"dev",deps:["req-fetch"]},
+ {id:"be-dev",name:"Backend dev",role:"API from the API document + unit tests",col:2,row:4,icon:"code",kind:"dev",deps:["req-fetch"]},
  {id:"ui-tests",name:"Isolated UI automation",role:"Playwright on localhost, mocked API",col:3,row:3,icon:"eye",kind:"test",deps:["fe-dev"]},
- {id:"api-tests",name:"API automation",role:"Cucumber + Java scenarios on the local jar",col:3,row:4,icon:"api",kind:"test",deps:["be-dev"]},
- {id:"reviewer",name:"Strict reviewer",role:"Read-only code review against the ACs",col:4,row:3,icon:"shield",kind:"review",deps:["ui-tests","api-tests"]},
- {id:"gate",name:"Local quality scan",role:"Sonar rules, SAST, secrets, dependencies",col:4,row:4,icon:"scan",kind:"scan",deps:["ui-tests","api-tests"]},
- {id:"fixer",name:"Review fixer",role:"Fixes review + scan findings in one pass",col:5,row:"span",icon:"wrench",kind:"fix",deps:["reviewer","gate"]},
- {id:"cicd",name:"CI/CD pipeline",role:"Re-runs all checks + server Sonar gate, deploys to QA",col:6,row:"span",icon:"rocket",kind:"ship",deps:["fixer"]},
- {id:"smoke",name:"Smoke test",role:"Automated go/no-go on the QA build",col:7,row:3,icon:"pulse",kind:"qa",deps:["cicd"]},
- {id:"qa-api",name:"API acceptance",role:"Cucumber @qa scenarios on the QA API",col:7,row:4,icon:"api",kind:"qa",deps:["smoke"]},
- {id:"manual-tests",name:"Manual QA",role:"Exploratory testing on the QA URL",col:8,row:"span",icon:"hand",kind:"qa",deps:["qa-api"]},
- {id:"signoff",name:"Sign-off",role:"You accept the story for UAT / production",col:9,row:"span",icon:"user",kind:"human",human:true,deps:["manual-tests"]}
+ {id:"api-tests",name:"API automation",role:"Cucumber + Java against the local backend",col:3,row:4,icon:"api",kind:"test",deps:["be-dev"]},
+ {id:"reviewer",name:"Tech lead review",role:"Read-only review against the ACs and documents",col:4,row:3,icon:"shield",kind:"review",deps:["ui-tests","api-tests"]},
+ {id:"gate",name:"Quality scans",role:"Sonar · Fortify · NexusIQ + quick checks",col:4,row:4,icon:"scan",kind:"scan",deps:["ui-tests","api-tests"]},
+ {id:"fe-fix",name:"Frontend fixes",role:"The frontend dev fixes the findings",col:5,row:3,icon:"wrench",kind:"dev",deps:["reviewer","gate"]},
+ {id:"be-fix",name:"Backend fixes",role:"The backend dev fixes the findings",col:5,row:4,icon:"wrench",kind:"dev",deps:["reviewer","gate"]},
+ {id:"cicd",name:"Merge + CI",role:"MR per repo, your OK, merge, GitLab CI on main",col:6,row:"span",icon:"rocket",kind:"ship",deps:["fe-fix","be-fix"]}
+];
+// After StoryRail: done by the team, shown for the whole picture (no status).
+const OUTSIDE=[
+ {id:"x-cdd",name:"Deploy with CDD",role:"The team deploys the green build to QA",col:7,row:3,icon:"rocket",kind:"ship"},
+ {id:"x-qa",name:"QA testing",role:"Test cases, E2E UI + API automation, manual tests",col:7,row:4,icon:"hand",kind:"qa"},
+ {id:"x-review",name:"Sprint review",role:"Functional analyst + PO review and sign off",col:8,row:"span",icon:"user",kind:"human"}
 ];
 const ICONS={
  user:'<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/>',
@@ -471,15 +484,24 @@ const nodes={}; let state={}; let run={}; const feedSeen=new Set();
 const add=(el)=>{flow.appendChild(el);return el;};
 const div=(cls,css)=>{const d=document.createElement("div"); d.className=cls; Object.assign(d.style,css||{}); return d;};
 
-STEPS.forEach(([t,c],i)=>{ const s=add(div("step",{gridColumn:c})); s.innerHTML='<span class="n"></span><span class="t"></span>'; s.firstChild.textContent=String(i+1); s.lastChild.textContent=t; });
-(()=>{ const z=add(div("zone local",{gridColumn:"1 / 6",gridRow:"2 / 6"})); z.innerHTML="<span>Local workspace · before push</span>"; })();
-(()=>{ const z=add(div("zone qa",{gridColumn:"7 / 9",gridRow:"2 / 6"})); z.innerHTML="<span>Deployed QA URL</span>"; })();
-[["fe","Frontend lane · library-frontend",3],["be","Backend lane · library-backend + library-api-tests",4]].forEach(([c,t,r])=>{ const l=add(div("lane "+c,{gridColumn:"2 / 4",gridRow:String(r)})); l.innerHTML="<span></span>"; l.firstChild.textContent=t; });
+STEPS.forEach(([t,n,c])=>{ const s=add(div("step",{gridColumn:c})); s.innerHTML='<span class="n"></span><span class="t"></span>'; if(n) s.firstChild.textContent=n; else s.firstChild.remove(); s.lastChild.textContent=t; });
+(()=>{ const z=add(div("zone local",{gridColumn:"1 / 6",gridRow:"2 / 6"})); z.innerHTML="<span>Your machine · before merge</span>"; })();
+(()=>{ const z=add(div("zone ci",{gridColumn:"6 / 7",gridRow:"2 / 6"})); z.innerHTML="<span>GitLab</span>"; })();
+(()=>{ const z=add(div("zone outside",{gridColumn:"7 / 9",gridRow:"2 / 6"})); z.innerHTML="<span>Outside StoryRail</span>"; })();
+[["fe","Frontend lane",3],["be","Backend lane + API tests",4]].forEach(([c,t,r])=>{ ["2 / 4","5 / 6"].forEach((col,k)=>{ const l=add(div("lane "+c,{gridColumn:col,gridRow:String(r)})); l.innerHTML="<span></span>"; if(!k) l.firstChild.textContent=t; }); });
 AGENTS.forEach(a=>{
   const el=document.createElement("article"); el.className="box pending"+(a.human?" human":""); el.id="st-"+a.id;
   el.style.setProperty("--f","var(--c-"+a.kind+"-f)"); el.style.setProperty("--s","var(--c-"+a.kind+"-s)");
   el.style.gridColumn=String(a.col); el.style.gridRow=a.row==="span"?"3 / 5":String(a.row);
   el.innerHTML='<span class="tick">'+TICK+'</span><div class="hd"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+ICONS[a.icon]+'</svg></span><span class="nm"></span></div><div class="rl"></div><div class="meta"><span class="pill">queued</span><span class="note"></span></div><div class="prog"><i></i></div>';
+  el.querySelector(".nm").textContent=a.name; el.querySelector(".rl").textContent=a.role;
+  add(el); nodes[a.id]=el;
+});
+OUTSIDE.forEach(a=>{
+  const el=document.createElement("article"); el.className="box outside"; el.id="st-"+a.id;
+  el.style.setProperty("--f","var(--c-"+a.kind+"-f)"); el.style.setProperty("--s","var(--c-"+a.kind+"-s)");
+  el.style.gridColumn=String(a.col); el.style.gridRow=a.row==="span"?"3 / 5":String(a.row);
+  el.innerHTML='<div class="hd"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+ICONS[a.icon]+'</svg></span><span class="nm"></span></div><div class="rl"></div><div class="meta"><span class="pill">the team</span></div>';
   el.querySelector(".nm").textContent=a.name; el.querySelector(".rl").textContent=a.role;
   add(el); nodes[a.id]=el;
 });
@@ -505,10 +527,16 @@ function drawWires(){
     out+=`<path class="${cls}" d="${p}" marker-end="url(#${mk})"/>`;
     if(cls.includes("flow-on")) out+=`<circle r="4.5" class="packet"><animateMotion dur="1.5s" repeatCount="indefinite" path="${p}"/></circle>`;
   }));
-  const F=R(nodes["fixer"]), G=R(nodes["gate"]);
+  const F=R(nodes["be-fix"]), G=R(nodes["gate"]);
   const yb=Math.max(F.b,G.b)+18;
   out+=`<path class="wire loop" d="M${F.cx},${F.b} L${F.cx},${yb} L${G.cx},${yb} L${G.cx},${G.b+2}" marker-end="url(#a-loop)"/>`;
-  out+=`<text class="wlabel" x="${(F.cx+G.cx)/2}" y="${yb+14}" text-anchor="middle">↻ re-check · max 2 rounds</text>`;
+  out+=`<text class="wlabel" x="${(F.cx+G.cx)/2}" y="${yb+14}" text-anchor="middle">↻ 6 · re-check · max 2 rounds</text>`;
+  // after StoryRail: CI green → CDD → QA testing → sprint review (static, dashed)
+  const C=R(nodes["cicd"]), D=R(nodes["x-cdd"]), Q=R(nodes["x-qa"]), V=R(nodes["x-review"]);
+  const mx=(C.r+D.l)/2;
+  out+=`<path class="wire outside" d="M${C.r},${C.cy} L${mx},${C.cy} L${mx},${D.cy} L${D.l-2},${D.cy}" marker-end="url(#a-muted)"/>`;
+  out+=`<path class="wire outside" d="M${D.cx},${D.b} L${Q.cx},${Q.t-2}" marker-end="url(#a-muted)"/>`;
+  out+=`<path class="wire outside" d="M${Q.r},${Q.cy} L${(Q.r+V.l)/2},${Q.cy} L${(Q.r+V.l)/2},${V.cy} L${V.l-2},${V.cy}" marker-end="url(#a-muted)"/>`;
   wires.innerHTML=out;
 }
 function setText(id,v){const e=$(id); if(e.textContent!==String(v)) e.textContent=v;}
@@ -532,7 +560,7 @@ function renderAgents(){
 function renderRun(){
   
   const sub=$("subtitle");
-  if(run.repo){ sub.textContent=""; sub.append(document.createTextNode([run.title,run.summary].filter(Boolean).join(" · ")+" · ")); const a=document.createElement("a"); a.href="https://github.com/"+run.repo; a.target="_blank"; a.rel="noopener"; a.textContent=run.repo; sub.append(a);} else if(run.title||run.summary) setText("subtitle",[run.title,run.summary].filter(Boolean).join(" · "));
+  if(run.repo){ sub.textContent=""; sub.append(document.createTextNode([run.title,run.summary].filter(Boolean).join(" · ")+" · ")); const a=document.createElement("a"); a.href=run.repo; a.target="_blank"; a.rel="noopener"; a.textContent=run.repo.replace(/^https?:\/\/[^/]+\//,""); sub.append(a);} else if(run.title||run.summary) setText("subtitle",[run.title,run.summary].filter(Boolean).join(" · "));
   if(run.phase) setText("phase",run.phase);
   const m=run.metrics||{};
   const t=(id,b,o)=>{ if(!o||o.total==null) return; if(o.pending){ $(id).innerHTML="CI<small>pending</small>"; bar(b,0); return;} $(id).innerHTML=o.passed+"<small>/ "+o.total+"</small>"; bar(b,o.total?o.passed/o.total*100:0); };
@@ -543,11 +571,14 @@ function renderRun(){
     else{ $("k-rev").innerHTML=fixed+"<small>/ "+found+" fixed"+(open?" · "+open+" open":"")+"</small>"; bar("kb-rev",fixed/found*100); }
     $("findings").hidden=false; const mx=Math.max(1,found);
     ["blocker","major","minor","fixed"].forEach(k=>{ setText("sn-"+k,r[k]||0); bar("sv-"+k,(r[k]||0)/mx*100); }); }
-  if(m.security){ const s=m.security; $("k-sec").innerHTML=(s.vulns??"—")+"<small>/ "+(s.lint??"—")+" lint</small>"; bar("kb-sec",(s.vulns===0&&s.lint===0)?100:30); }
+  if(m.scans){ const sc=m.scans, v=[sc.sonar,sc.fortify,sc.nexusiq], f=x=>x==null?"–":String(x); const open=v.reduce((t,x)=>t+(x||0),0), ran=v.every(x=>x!=null);
+    $("k-sec").innerHTML=v.map(f).join(" · ")+"<small>"+(open?open+" blocking":ran?"gates passed":"open")+"</small>"; $("k-sec").title="Blocking issues still open: Sonar "+f(sc.sonar)+", Fortify "+f(sc.fortify)+", NexusIQ "+f(sc.nexusiq)+" (– = not run)";
+    bar("kb-sec",!open&&ran?100:open?30:60); }
+  else if(m.security){ const s=m.security; $("k-sec").innerHTML=(s.vulns??"—")+"<small>/ "+(s.lint??"—")+" lint</small>"; bar("kb-sec",(s.vulns===0&&s.lint===0)?100:30); }
   const iss=run.issues; if(Array.isArray(iss)&&iss.length){ const box=$("issues"); box.innerHTML="";
     iss.forEach(n=>{ const d=document.createElement("div"); d.className="issue";
       const kk=document.createElement("span"); kk.className="k"; kk.textContent="Issue #"+n; d.append(kk);
-      const a=document.createElement(run.repo?"a":"span"); if(run.repo){a.href="https://github.com/"+run.repo+"/issues/"+n;a.target="_blank";a.rel="noopener";a.textContent="Open on GitHub";} else {a.className="t";a.textContent="#"+n;} d.append(a); box.append(d); }); }
+      const a=document.createElement(run.repo?"a":"span"); if(run.repo){a.href=run.repo+"/-/issues/"+n;a.target="_blank";a.rel="noopener";a.textContent="Open in GitLab";} else {a.className="t";a.textContent="#"+n;} d.append(a); box.append(d); }); }
 }
 function renderFeed(items){
   const ul=$("feed"); if(!items||!items.length) return; ul.innerHTML="";
@@ -563,11 +594,12 @@ setInterval(()=>{ if(!run.startedAt) return; const end=run.endedAt?new Date(run.
 /* ---------- Squad view ---------- */
 const KIND={lead:["var(--brand)","var(--brand-soft)"],intake:["var(--c-intake-s)","var(--c-intake-f)"],dev:["var(--c-dev-s)","var(--c-dev-f)"],test:["var(--c-test-s)","var(--c-test-f)"],review:["var(--c-review-s)","var(--c-review-f)"],scan:["var(--c-scan-s)","var(--c-scan-f)"],fix:["var(--c-fix-s)","var(--c-fix-f)"],ship:["var(--c-ship-s)","var(--c-ship-f)"],qa:["var(--c-qa-s)","var(--c-qa-f)"],human:["var(--c-human-s)","var(--c-human-f)"]};
 const STATION_NAME=Object.fromEntries(AGENTS.map(a=>[a.id,a.name])); STATION_NAME.orchestrator="Orchestrator";
-const SAY={pending:"Waiting for an earlier step",running:"Working",done:"Done",failed:"Needs attention",waiting:"Waiting on you",skipped:"Not needed this run"};
+const SAY={pending:"Waiting for an earlier step",running:"Working",done:"Done",failed:"Needs attention",waiting:"Waiting on you",skipped:"Not needed this run",outside:"Outside StoryRail"};
 const STATUS_ICON={done:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',failed:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round"><path d="M12 6v8M12 18h.01"/></svg>',waiting:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round"><path d="M12 6v8M12 18h.01"/></svg>'};
 let squad=[], engine="records", byStation={}, openId=null, lastFocus=null, chatCache={};
 
 function memberState(m){
+  if(m.outOfScope) return {status:"outside",progress:0,note:m.outOfScope,per:[]};
   if(!m.stations.length){ // orchestrator: follows the run
     const st=run.startedAt?(run.endedAt?"done":"running"):"pending";
     return {status:st,progress:st==="done"?100:st==="running"?50:0,note:run.phase?("Phase: "+run.phase):"",per:[]};
@@ -591,7 +623,7 @@ function avatar(m,ms,size){
   return d;
 }
 function ago(t){ if(!t) return ""; const s=Math.max(0,(Date.now()-new Date(t))/1000); if(s<60) return "just now"; if(s<3600) return Math.floor(s/60)+" min ago"; return Math.floor(s/3600)+" h ago"; }
-function lastFeed(m){ const ids=new Set(m.stations); if(!m.stations.length) ids.add("orchestrator"); const f=(window.__feed||[]).filter(x=>ids.has(x.agent)); return f[f.length-1]; }
+function lastFeed(m){ const ids=new Set(m.stations); if(m.kind==="lead") ids.add("orchestrator"); const f=(window.__feed||[]).filter(x=>ids.has(x.agent)); return f[f.length-1]; }
 
 function renderSquad(){
   if(!squad.length) return;
@@ -662,11 +694,11 @@ function renderDrawer(full){
   data.outputs.forEach(o=>{ const a=document.createElement("a"); a.href=o; a.target="_blank"; a.rel="noopener"; a.textContent=o.split("/").pop(); rep.append(a); });
   const thread=$("d-thread"); const atBottom=thread.scrollHeight-thread.scrollTop-thread.clientHeight<40;
   thread.innerHTML="";
-  const ids=new Set(m.stations); if(!m.stations.length) ids.add("orchestrator");
+  const ids=new Set(m.stations); if(m.kind==="lead") ids.add("orchestrator");
   const items=(window.__feed||[]).filter(f=>ids.has(f.agent)).map(f=>({t:f.t,kind:"log",level:f.level,text:f.msg}))
     .concat((data.chat||[]).map(c=>({t:c.t,kind:c.from==="you"?"you":"them",text:c.text})))
     .sort((a,b)=>new Date(a.t)-new Date(b.t));
-  if(!items.length){ const p=document.createElement("p"); p.className="empty"; p.textContent=m.brief?m.name+" hasn’t reported anything in this run yet. You can still ask about how they work.":m.name+" is the product owner. The squad asks them at the merge, triage and sign-off gates."; thread.append(p); }
+  if(!items.length){ const p=document.createElement("p"); p.className="empty"; p.textContent=m.outOfScope?m.name+" works outside StoryRail: "+m.outOfScope:m.brief?m.name+" hasn’t reported anything in this run yet. You can still ask about how they work.":m.name+" can't be asked here."; thread.append(p); }
   items.forEach(it=>{ const d=document.createElement("div"); d.className="bub "+it.kind+(it.level?" "+it.level:""); d.textContent=it.text; const tm=document.createElement("time"); tm.textContent=new Date(it.t).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}); d.append(tm); thread.append(d); });
   if(asking===m.id){ const d=document.createElement("div"); d.className="bub thinking"; d.textContent=m.name+" is looking into it…"; thread.append(d); }
   if(full||atBottom) thread.scrollTop=thread.scrollHeight;
@@ -702,9 +734,10 @@ function orchGeometry(){
   return small;
 }
 ORCH_SMALL.addEventListener("change",()=>{ orchBuilt=false; if(!$("view-orch").hidden) renderOrch(); });
-// Hand-off labels between ring neighbours, keyed "from>to"; "par" = the two work side by side.
-const HANDOFF={"start":"Story picked","req-fetch>fe-dev":"Spec + contract","fe-dev>be-dev":"par","be-dev>ui-tests":"Code + unit tests","ui-tests>api-tests":"par",
-  "api-tests>reviewer":"Tests green","reviewer>gate":"par","gate>fixer":"two:Findings ⇄ fixes","fixer>cicd":"Approved","cicd>manual-tests":"Deployed to QA","end":"Ready for sign-off"};
+// Hand-off labels between ring neighbours, keyed "<member id>><member id>"; "par" = the two work side by side,
+// "out:" = a hand-off outside StoryRail (drawn dashed, never lit).
+const HANDOFF={"laurence>sindhu":"Story + documents","sindhu>varunesh":"Spec + contract","varunesh>meysam":"par","meysam>antonello":"Code + unit tests",
+  "antonello>jagan":"par","jagan>priya":"Tests green","priya>subramanian":"par","subramanian>charlotte":"Gate met after fixes","charlotte>harri":"out:CI green · CDD","harri>laurence":"out:Sprint review"};
 let orchBuilt=false, orchNodes={}, orchSpokes={}, orchArcs=[];
 function svgEl(tag,attrs,parent){ const e=document.createElementNS(NS,tag); for(const k in attrs) e.setAttribute(k,attrs[k]); if(parent) parent.append(e); return e; }
 function polar(deg,rad){ const a=deg*Math.PI/180; return [O.cx+rad*Math.cos(a), O.cy+rad*Math.sin(a)]; }
@@ -729,16 +762,17 @@ function buildOrch(){
   orchArcs=[];
   const delta=Math.asin((O.r+12)/O.R)*180/Math.PI;
   slots.forEach((m,i)=>{ const next=slots[(i+1)%n];
-    const key=i===0?"start":(i===n-1?"end":(m.stations[m.stations.length-1]+">"+next.stations[0]));
-    let lab=HANDOFF[key]; const a1=angle(i)+delta, a2=angle(i+1)-delta;
+    const key=m.id+">"+next.id;
+    let lab=HANDOFF[key]; const outside=(lab||"").startsWith("out:")||(i!==0&&(!!m.outOfScope||!!next.outOfScope)); // the first arc (PO → analysis) is where a run starts
+    if(lab&&lab.startsWith("out:")) lab=lab.slice(4); const a1=angle(i)+delta, a2=angle(i+1)-delta;
     const [x1,y1]=polar(a1,O.R), [x2,y2]=polar(a2,O.R);
     const par=lab==="par", two=!!lab&&lab.startsWith("two:"); if(two) lab=lab.slice(4);
-    const path=svgEl("path",{class:"arc"+(par?" par":""),d:`M${x1},${y1} A${O.R},${O.R} 0 0 1 ${x2},${y2}`,"marker-end":par?"":"url(#o-arr)"},svg);
-    if(two) path.setAttribute("marker-start","url(#o-arr)"); // findings go to the fixer, fixes come back for a re-check
+    const path=svgEl("path",{class:"arc"+(par?" par":"")+(outside?" outside":""),d:`M${x1},${y1} A${O.R},${O.R} 0 0 1 ${x2},${y2}`,"marker-end":par?"":"url(#o-arr)"},svg);
+    if(two) path.setAttribute("marker-start","url(#o-arr)"); // a two-way hand-off (the work goes back and forth)
     let text=null;
-    if(lab&&!par){ const mid=(angle(i)+angle(i+1))/2; const [lx,ly]=polar(mid,key==="gate>fixer"?O.R-34:O.R-74);
-      text=svgEl("text",{class:"arc-lab",x:lx,y:ly,"text-anchor":"middle","dominant-baseline":"middle"},svg); text.textContent=lab; }
-    orchArcs.push({path,text,target:next,start:i===0,end:i===n-1});
+    if(lab&&!par){ const mid=(angle(i)+angle(i+1))/2; const [lx,ly]=polar(mid,O.R-74);
+      text=svgEl("text",{class:"arc-lab"+(outside?" outside":""),x:lx,y:ly,"text-anchor":"middle","dominant-baseline":"middle"},svg); text.textContent=lab; }
+    orchArcs.push({path,text,target:next,start:i===0,outside});
   });
   svg.querySelectorAll(".arc-lab").forEach(t=>svg.append(t)); // labels above every line
   // hub: the orchestrator
@@ -777,10 +811,10 @@ function buildOrch(){
   });
   orchBuilt=true;
 }
-// Which review round a reviewer is in: from its note ("Round 2: …"), else round 2+ once the fixer has delivered.
+// Which review round a reviewer is in: from its note ("Round 2: …"), else round 2+ once a developer has delivered fixes.
 function reviewRound(ms){
   const m=/round\s*(\d+)/i.exec(ms.note||""); if(m) return Number(m[1]);
-  return (state.fixer||{}).status==="done"?2:1;
+  return ["fe-fix","be-fix"].some(s=>(state[s]||{}).status==="done")?2:1;
 }
 function renderOrch(){
   if(!squad.length) return; if(!orchBuilt) buildOrch(); if(!orchBuilt) return;
@@ -791,13 +825,11 @@ function renderOrch(){
       g.setAttribute("class","hub node "+ms.status);
       const done=AGENTS.filter(a=>!a.human&&(state[a.id]||{}).status==="done").length, tot=AGENTS.filter(a=>!a.human).length;
       const c=g.querySelector(".hprog"); const C=2*Math.PI*O.hub; c.setAttribute("stroke-dashoffset",C*(1-done/tot));
-      g.querySelector(".hphase").textContent=run.endedAt?"Story signed off":run.phase?((ORCH_SMALL.matches?"":"Phase: ")+run.phase):"Waiting for a story";
+      g.querySelector(".hphase").textContent=run.endedAt?"Ready for QA":run.phase?((ORCH_SMALL.matches?"":"Phase: ")+run.phase):"Waiting for a story";
       g.setAttribute("aria-label",m.name+", "+m.role+". "+(run.phase?"Phase "+run.phase:"No story running"));
       return;
     }
-    // the product owner is "waiting" whenever the squad waits on a decision
-    const anyWaiting=Object.values(state).some(s=>s&&s.status==="waiting");
-    const st=m===po&&anyWaiting?"waiting":ms.status;
+    const st=ms.status;
     g.setAttribute("class","node "+st+(m===po?" po":""));
     const c=g.querySelector(".prog"); const C=2*Math.PI*(O.r+7); c.setAttribute("stroke-dashoffset",C*(1-(st==="done"?100:ms.progress)/100));
     g.setAttribute("aria-label",m.name+", "+m.role+": "+(SAY[st]||st)+(ms.note?". "+ms.note:""));
@@ -809,14 +841,14 @@ function renderOrch(){
   orchArcs.forEach(a=>{
     if(a.when){ const on=a.when(); a.path.classList.toggle("lit",on); if(a.text) a.text.classList.toggle("lit",on); return; }
     const t=memberState(a.target);
-    const lit=a.start?!!run.startedAt:a.end?((state.signoff||{}).status&&state.signoff.status!=="pending"):(t.status!=="pending"&&t.status!=="skipped");
+    const lit=a.outside?false:a.start?!!run.startedAt:(t.status!=="pending"&&t.status!=="skipped"&&t.status!=="outside");
     a.path.classList.toggle("lit",!!lit); if(a.text) a.text.classList.toggle("lit",!!lit);
   });
   const box=$("orch-now"); box.textContent="";
-  if(!now.length){ box.textContent=run.endedAt?"The story is signed off.":run.startedAt?lead.name+" is handing over the next task.":"Waiting for a story."; return; }
+  if(!now.length){ box.textContent=run.endedAt?"CI is green on main. Over to the team: deploy with CDD, test in QA, sprint review.":run.startedAt?lead.name+" is handing over the next task.":"Waiting for a story."; return; }
   const end=t=>/[.?!]$/.test(t)?t:t+".";
   now.sort((a,b)=>(a[0]===po)-(b[0]===po)).forEach(([m,ms,st])=>{ const line=document.createElement("span"); const b=document.createElement("b"); b.textContent=m.name; line.style.borderColor=st==="running"?(KIND[m.kind]||KIND.lead)[0]:st==="failed"?"var(--bad)":"var(--wait)"; box.append(line); line.append(b,
-    m===po?" has a decision to make.":st==="waiting"?end(" is waiting for "+po.name+(ms.note?": "+ms.note:"")):st==="failed"?end(" needs attention"+(ms.note?": "+ms.note:"")):(ms.note?": "+ms.note:" is working")+(ms.progress?" ("+ms.progress+"%)":"")+"."); });
+    st==="waiting"?end(" is waiting for you"+(ms.note?": "+ms.note:"")):st==="failed"?end(" needs attention"+(ms.note?": "+ms.note:"")):(ms.note?": "+ms.note:" is working")+(ms.progress?" ("+ms.progress+"%)":"")+"."); });
 }
 
 /* ---------- Theme: Auto follows the system; Light/Dark override it and are remembered in this browser ---------- */

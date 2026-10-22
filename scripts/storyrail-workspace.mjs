@@ -27,7 +27,7 @@ function fail(msg) {
   process.exit(2);
 }
 
-const projects = Object.entries(config.projects);
+const projects = Object.entries(config.projects).filter(([, p]) => p);
 const references = Object.entries(config.references ?? {})
   .filter(([, r]) => r && r.enabled)
   .map(([name, r]) => {
@@ -38,10 +38,13 @@ const [cmd] = process.argv.slice(2);
 
 switch (cmd) {
   case 'sync': {
+    for (const [lane, p] of projects) {
+      if (String(p.cloneUrl).startsWith('TODO')) fail(`projects.${lane}.cloneUrl is still a TODO(office) placeholder in storyrail.config.json`);
+    }
     let problems = 0;
     for (const [lane, p] of [...projects, ...references]) {
       const dir = join(ROOT, p.path);
-      const branch = p.branch ?? 'main';
+      const branch = p.branch ?? p.defaultBranch ?? 'main';
       if (!existsSync(join(dir, '.git'))) {
         mkdirSync(dirname(dir), { recursive: true });
         console.log(`${lane}: cloning ${p.cloneUrl} into ${p.path}`);
@@ -53,6 +56,7 @@ switch (cmd) {
         problems++;
         continue;
       }
+      git(dir, 'fetch', '--quiet', 'origin');
       git(dir, 'switch', '--quiet', branch);
       git(dir, 'pull', '--quiet', '--ff-only');
       console.log(`${lane}: ${p.path} on main at ${git(dir, 'log', '-1', '--format=%h %s')}`);
@@ -68,7 +72,7 @@ switch (cmd) {
         continue;
       }
       const dirty = git(dir, 'status', '--porcelain') ? 'uncommitted changes' : 'clean';
-      console.log(`${lane}: ${p.repo} · ${p.path} · ${git(dir, 'branch', '--show-current')} · ${dirty} · ${git(dir, 'log', '-1', '--format=%h %s')}`);
+      console.log(`${lane}: ${p.project ?? p.repo} · ${p.path} · ${git(dir, 'branch', '--show-current')} · ${dirty} · ${git(dir, 'log', '-1', '--format=%h %s')}`);
     }
     break;
   case 'config':

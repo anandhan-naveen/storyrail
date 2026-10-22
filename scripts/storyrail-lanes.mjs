@@ -19,20 +19,22 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const config = JSON.parse(readFileSync(join(ROOT, 'storyrail.config.json'), 'utf8'));
 const FE = config.projects.frontend.path;
 const BE = config.projects.backend.path;
-const AT = config.projects.apiTests.path;
+const AT = config.projects.apiTests?.path ?? null;
 
 // Paths are relative to the hub root. `allow` = prefixes the agent may change; `deny` = exceptions inside them;
-// `notes` = the station whose work notes (runs/<run>/notes/<station>.md) the agent may also write.
+// `runs` = the files in the run folder (runs/<run>/...) the agent may also write, as patterns.
+const RUN = (pattern, label) => ({ re: new RegExp(`^runs/[^/]+/${pattern}$`), label: `runs/<run>/${label}` });
 const LANES = {
-  'req-fetch': { allow: ['runs/', `${BE}/docs/api/openapi.yaml`, `${FE}/contract/openapi.yaml`, `${AT}/contract/openapi.yaml`] },
-  'fe-dev': { allow: [`${FE}/`], deny: [`${FE}/tests/`, `${FE}/contract/`, `${FE}/.github/`], notes: 'fe-dev' },
-  'be-dev': { allow: [`${BE}/`], deny: [`${BE}/docs/api/`, `${BE}/.github/`], notes: 'be-dev' },
+  'req-fetch': { allow: ['runs/', `${BE}/docs/api/openapi.yaml`, `${FE}/contract/openapi.yaml`, ...(AT ? [`${AT}/contract/openapi.yaml`] : [])] },
+  'fe-dev': { allow: [`${FE}/`], deny: [`${FE}/tests/`, `${FE}/contract/`, `${FE}/.github/`, `${FE}/.gitlab-ci.yml`], runs: [RUN('notes/fe-dev\\.md', 'notes/fe-dev.md')] },
+  'be-dev': { allow: [`${BE}/`], deny: [`${BE}/docs/api/`, `${BE}/.github/`, `${BE}/.gitlab-ci.yml`], runs: [RUN('notes/be-dev\\.md', 'notes/be-dev.md')] },
   'ui-tests': { allow: [`${FE}/tests/ui/`, 'runs/'] },
-  'api-tests': { allow: [`${AT}/src/test/`, `${AT}/README.md`, 'runs/'] },
+  'api-tests': { allow: [...(AT ? [`${AT}/src/test/`, `${AT}/README.md`] : []), 'runs/'] },
   reviewer: { allow: [] },
   scan: { allow: ['runs/'] },
-  fixer: { allow: [`${FE}/`, `${BE}/`, `${AT}/`, 'runs/'], deny: [`${FE}/.github/`, `${BE}/.github/`, `${AT}/.github/`] },
-  'manual-qa': { allow: ['runs/', 'tests/manual/'] },
+  // Step 5: the developers fix the review and scan findings of their own lane, tests included.
+  'fe-fix': { allow: [`${FE}/`], deny: [`${FE}/contract/`, `${FE}/.github/`, `${FE}/.gitlab-ci.yml`], runs: [RUN('notes/fe-fix\\.md', 'notes/fe-fix.md'), RUN('fixes-round\\d+-fe\\.md', 'fixes-round<k>-fe.md')] },
+  'be-fix': { allow: [`${BE}/`, ...(AT ? [`${AT}/src/test/`] : [])], deny: [`${BE}/docs/api/`, `${BE}/.github/`, `${BE}/.gitlab-ci.yml`], runs: [RUN('notes/be-fix\\.md', 'notes/be-fix.md'), RUN('fixes-round\\d+-be\\.md', 'fixes-round<k>-be.md')] },
 };
 
 function fail(msg, code = 2) {
@@ -54,15 +56,15 @@ function changes(repoDir, prefix) {
 function allChanges() {
   // The hub ignores projects/, so its own status never lists project files twice.
   const files = changes(ROOT, '');
-  for (const p of [FE, BE, AT]) files.push(...changes(join(ROOT, p), p));
+  for (const p of [FE, BE, AT].filter(Boolean)) files.push(...changes(join(ROOT, p), p));
   return files;
 }
 
 function inLane(file, lane) {
   const allowed = lane.allow.some((prefix) => file === prefix || file.startsWith(prefix));
   const denied = (lane.deny ?? []).some((prefix) => file.startsWith(prefix));
-  const notes = lane.notes && new RegExp(`^runs/[^/]+/notes/${lane.notes}\\.md$`).test(file);
-  return (allowed && !denied) || Boolean(notes);
+  const inRun = (lane.runs ?? []).some((r) => r.re.test(file));
+  return (allowed && !denied) || inRun;
 }
 
 const [cmd, ...agents] = process.argv.slice(2);
@@ -92,8 +94,8 @@ switch (cmd) {
   case 'lanes':
     for (const [agent, lane] of Object.entries(LANES)) {
       const deny = lane.deny?.length ? ` (not ${lane.deny.join(', ')})` : '';
-      const notes = lane.notes ? `, runs/<run>/notes/${lane.notes}.md` : '';
-      console.log(`${agent}: ${lane.allow.join(', ') || 'nothing (read-only)'}${deny}${notes}`);
+      const runs = lane.runs?.length ? `, ${lane.runs.map((r) => r.label).join(', ')}` : '';
+      console.log(`${agent}: ${lane.allow.join(', ') || 'nothing (read-only)'}${deny}${runs}`);
     }
     break;
   default:

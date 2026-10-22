@@ -187,9 +187,9 @@ function buildPrompt(member, question, st) {
 }
 
 const STATION_LABEL = {
-  'req-fetch': 'requirement fetch', 'fe-dev': 'frontend build', 'be-dev': 'backend build', 'ui-tests': 'UI automation',
-  'api-tests': 'API automation', reviewer: 'review', gate: 'quality scan', fixer: 'review fixes', cicd: 'CI/CD',
-  smoke: 'smoke test', 'qa-api': 'API acceptance on QA', 'manual-tests': 'manual QA', signoff: 'sign-off',
+  'req-fetch': 'requirement analysis', 'fe-dev': 'frontend build', 'be-dev': 'backend build', 'ui-tests': 'UI automation',
+  'api-tests': 'API automation', reviewer: 'review', gate: 'quality scans', 'fe-fix': 'frontend fixes', 'be-fix': 'backend fixes',
+  cicd: 'merge and CI',
 };
 const STATUS_WORDS = { pending: 'not started yet', running: 'in progress', done: 'done', failed: 'failed', waiting: 'waiting for you', skipped: 'not needed this run' };
 

@@ -13,6 +13,12 @@
       "type": "streamable-http",
       "url": "http://localhost:6006/mcp",
       "disabled": true
+    },
+    "gitlab": {
+      "_comment": "TODO(office): the GitLab MCP server your office provides (reads issues, merge requests, pipelines). The name must match gitlab.mcpServer in storyrail.config.json. Writes still go through scripts/storyrail-gitlab.mjs with your token.",
+      "type": "streamable-http",
+      "url": "TODO(office): the GitLab MCP server's URL",
+      "disabled": true
     }
   }
 }
