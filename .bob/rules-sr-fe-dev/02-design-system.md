@@ -10,7 +10,7 @@ When `designSystem.enabled` is `true`, add these steps to your work. Otherwise s
    report it instead of guessing a layout.
 2. **Map every element to a library component.** For each element in the frame, find the matching component of
    `designSystem.package` and its story in Storybook (through the Storybook MCP server if `designSystem.storybookMcpServer`
-   is set, otherwise from the package's `*.stories.*` files under `projects/frontend/node_modules/<package>`).
+   is set, otherwise from the package's `*.stories.*` files under your app's `node_modules/<package>`).
    Note the props and variants the design uses.
 3. **Write a component map** at the top of your completion summary: `design element → library component (props/variant)`.
    Anything without a match goes under "Missing components" with what it should do; don't build a substitute.

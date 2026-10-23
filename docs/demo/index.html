@@ -568,22 +568,23 @@ svg.wires{position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-eve
 <script>
 (function(){
 const STEPS=[["Requirements","1","1"],["Build","2","2"],["Isolated tests","3","3"],["Review + scans","4","4"],["Fix","5","5"],["Merge + CI","7","6"],["After StoryRail: the team","","7 / 9"]];
-const AGENTS=[
- {id:"req-fetch",name:"Requirement analysis",role:"Reads the GitLab story and its Screen and API documents; asks you when unclear",col:1,row:"span",icon:"doc",kind:"intake"},
- {id:"fe-dev",name:"Frontend dev",role:"Screens from the Screen document + unit tests",col:2,row:3,icon:"code",kind:"dev",deps:["req-fetch"]},
- {id:"be-dev",name:"Backend dev",role:"API from the API document + unit tests",col:2,row:4,icon:"code",kind:"dev",deps:["req-fetch"]},
- {id:"ui-tests",name:"Isolated UI automation",role:"Playwright on localhost, mocked API",col:3,row:3,icon:"eye",kind:"test",deps:["fe-dev"]},
- {id:"api-tests",name:"API automation",role:"Cucumber + Java against the local backend",col:3,row:4,icon:"api",kind:"test",deps:["be-dev"]},
- {id:"reviewer",name:"Tech lead review",role:"Read-only review against the ACs and documents",col:4,row:3,icon:"shield",kind:"review",deps:["ui-tests","api-tests"]},
- {id:"gate",name:"Quality scans",role:"Sonar · Fortify · NexusIQ + quick checks",col:4,row:4,icon:"scan",kind:"scan",deps:["ui-tests","api-tests"]},
- {id:"fe-fix",name:"Frontend fixes",role:"The frontend dev fixes the findings",col:5,row:3,icon:"wrench",kind:"dev",deps:["reviewer","gate"]},
- {id:"be-fix",name:"Backend fixes",role:"The backend dev fixes the findings",col:5,row:4,icon:"wrench",kind:"dev",deps:["reviewer","gate"]},
- {id:"cicd",name:"Merge + CI",role:"MR per repo, your OK, merge, GitLab CI on main",col:6,row:"span",icon:"rocket",kind:"ship",deps:["fe-fix","be-fix"]}
+// Fixed boxes; buildFlow() adds three per application of the run (build, tests, fixes), one lane per app.
+const FIXED=[
+ {id:"req-fetch",name:"Requirement analysis",role:"Reads the GitLab story, its Applications section and its Screen and API documents; asks you when unclear",col:1,row:"span",icon:"doc",kind:"intake"},
+ {id:"reviewer",name:"Tech lead review",role:"Every app against the ACs, documents and contracts",col:4,row:"top",icon:"shield",kind:"review"},
+ {id:"gate",name:"Quality scans",role:"Sonar · Fortify · NexusIQ for every app",col:4,row:"bottom",icon:"scan",kind:"scan"},
+ {id:"cicd",name:"Merge + CI",role:"Your OK, then merge in dependency order and follow each GitLab CI",col:6,row:"span",icon:"rocket",kind:"ship"}
 ];
+let AGENTS=[];
+function appAgents(apps){ return apps.flatMap(a=>{ const fe=a.type==="frontend"; const calls=(a.consumes||[]).length?", "+a.consumes.join(", ")+" stubbed":"";
+  return [
+   {id:"dev@"+a.id,app:a.id,name:"Build "+a.id,role:fe?"Screens from the Screen document + unit tests":"API from the API document + unit tests",col:2,icon:"code",kind:"dev",deps:["req-fetch"]},
+   {id:"tests@"+a.id,app:a.id,name:(fe?"UI tests ":"API tests ")+a.id,role:fe?"Playwright, API mocked from the contract":"Cucumber, app running locally"+calls,col:3,icon:fe?"eye":"api",kind:"test",deps:["dev@"+a.id]},
+   {id:"fix@"+a.id,app:a.id,name:"Fixes "+a.id,role:"The "+(fe?"frontend":"backend")+" dev fixes this app's findings",col:5,icon:"wrench",kind:"dev",deps:["reviewer","gate"]}]; }); }
 // After StoryRail: done by the team, shown for the whole picture (no status).
 const OUTSIDE=[
- {id:"x-cdd",name:"Deploy with CDD",role:"The team deploys the green build to QA",col:7,row:3,icon:"rocket",kind:"ship"},
- {id:"x-qa",name:"QA testing",role:"Test cases, E2E UI + API automation, manual tests",col:7,row:4,icon:"hand",kind:"qa"},
+ {id:"x-cdd",name:"Deploy with CDD",role:"The team deploys the green builds to QA",col:7,row:"top",icon:"rocket",kind:"ship"},
+ {id:"x-qa",name:"QA testing",role:"Test cases, E2E UI + API automation, manual tests",col:7,row:"bottom",icon:"hand",kind:"qa"},
  {id:"x-review",name:"Sprint review",role:"Functional analyst + PO review and sign off",col:8,row:"span",icon:"user",kind:"human"}
 ];
 const ICONS={
@@ -603,31 +604,40 @@ const TICK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-wi
 const LABEL={pending:"queued",running:"working",done:"done",failed:"failed",ci:"in CI",blocked:"blocked",waiting:"awaiting you",skipped:"not needed"};
 const $=id=>document.getElementById(id);
 const flow=$("flow"), wires=$("wires");
-const nodes={}; let state={}; let run={}; const feedSeen=new Set();
+let nodes={}; let state={}; let run={}; const feedSeen=new Set(); let flowSig=null;
 const add=(el)=>{flow.appendChild(el);return el;};
 const div=(cls,css)=>{const d=document.createElement("div"); d.className=cls; Object.assign(d.style,css||{}); return d;};
 
-STEPS.forEach(([t,n,c])=>{ const s=add(div("step",{gridColumn:c})); s.innerHTML='<span class="n"></span><span class="t"></span>'; if(n) s.firstChild.textContent=n; else s.firstChild.remove(); s.lastChild.textContent=t; });
-(()=>{ const z=add(div("zone local",{gridColumn:"1 / 6",gridRow:"2 / 6"})); z.innerHTML="<span>Your machine · before merge</span>"; })();
-(()=>{ const z=add(div("zone ci",{gridColumn:"6 / 7",gridRow:"2 / 6"})); z.innerHTML="<span>GitLab</span>"; })();
-(()=>{ const z=add(div("zone outside",{gridColumn:"7 / 9",gridRow:"2 / 6"})); z.innerHTML="<span>Outside StoryRail</span>"; })();
-[["fe","Frontend lane",3],["be","Backend lane + API tests",4]].forEach(([c,t,r])=>{ ["2 / 4","5 / 6"].forEach((col,k)=>{ const l=add(div("lane "+c,{gridColumn:col,gridRow:String(r)})); l.innerHTML="<span></span>"; if(!k) l.firstChild.textContent=t; }); });
-AGENTS.forEach(a=>{
-  const el=document.createElement("article"); el.className="box pending"+(a.human?" human":""); el.id="st-"+a.id;
-  el.style.setProperty("--f","var(--c-"+a.kind+"-f)"); el.style.setProperty("--s","var(--c-"+a.kind+"-s)");
-  el.style.gridColumn=String(a.col); el.style.gridRow=a.row==="span"?"3 / 5":String(a.row);
-  el.innerHTML='<span class="tick">'+TICK+'</span><div class="hd"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+ICONS[a.icon]+'</svg></span><span class="nm"></span></div><div class="rl"></div><div class="meta"><span class="pill">queued</span><span class="note"></span></div><div class="prog"><i></i></div>';
-  el.querySelector(".nm").textContent=a.name; el.querySelector(".rl").textContent=a.role;
-  add(el); nodes[a.id]=el;
-});
-OUTSIDE.forEach(a=>{
-  const el=document.createElement("article"); el.className="box outside"; el.id="st-"+a.id;
-  el.style.setProperty("--f","var(--c-"+a.kind+"-f)"); el.style.setProperty("--s","var(--c-"+a.kind+"-s)");
-  el.style.gridColumn=String(a.col); el.style.gridRow=a.row==="span"?"3 / 5":String(a.row);
-  el.innerHTML='<div class="hd"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+ICONS[a.icon]+'</svg></span><span class="nm"></span></div><div class="rl"></div><div class="meta"><span class="pill">the team</span></div>';
-  el.querySelector(".nm").textContent=a.name; el.querySelector(".rl").textContent=a.role;
-  add(el); nodes[a.id]=el;
-});
+function buildFlow(apps){
+  flow.querySelectorAll(":scope > :not(svg)").forEach(e=>e.remove()); nodes={};
+  const n=Math.max(apps.length,2), last=3+n, half=3+Math.ceil(n/2);
+  flow.style.gridTemplateRows="auto 26px repeat("+n+",auto) 34px";
+  const rowOf=r=>r==="span"?"3 / "+last:r==="top"?"3 / "+half:r==="bottom"?half+" / "+last:String(r);
+  STEPS.forEach(([t,num,c])=>{ const s=add(div("step",{gridColumn:c})); s.innerHTML='<span class="n"></span><span class="t"></span>'; if(num) s.firstChild.textContent=num; else s.firstChild.remove(); s.lastChild.textContent=t; });
+  [["local","1 / 6","Your machine · before merge"],["ci","6 / 7","GitLab"],["outside","7 / 9","Outside StoryRail"]].forEach(([c,col,t])=>{ const z=add(div("zone "+c,{gridColumn:col,gridRow:"2 / "+(last+1)})); z.innerHTML="<span></span>"; z.firstChild.textContent=t; });
+  if(!apps.length){ const l=add(div("lane",{gridColumn:"2 / 6",gridRow:"3 / "+last})); l.innerHTML="<span></span>"; l.firstChild.textContent="One lane per application appears here once Sindhu has read the story"; }
+  apps.forEach((a,i)=>{ ["2 / 4","5 / 6"].forEach((col,k)=>{ const l=add(div("lane "+(a.type==="frontend"?"fe":"be"),{gridColumn:col,gridRow:String(3+i)})); l.innerHTML="<span></span>"; if(!k) l.firstChild.textContent=a.id+" · "+a.type+((a.consumes||[]).length?" · calls "+a.consumes.join(", "):""); }); });
+  const perApp=appAgents(apps).map(x=>({...x,row:3+apps.findIndex(a=>a.id===x.app)}));
+  const tests=perApp.filter(x=>x.id.startsWith("tests@")).map(x=>x.id), fixes=perApp.filter(x=>x.id.startsWith("fix@")).map(x=>x.id);
+  AGENTS=[FIXED[0],...perApp,{...FIXED[1],deps:tests.length?tests:["req-fetch"]},{...FIXED[2],deps:tests.length?tests:["req-fetch"]},{...FIXED[3],deps:fixes.length?fixes:["reviewer","gate"]}];
+  STATION_NAME=Object.fromEntries(AGENTS.map(a=>[a.id,a.name])); STATION_NAME.orchestrator="Orchestrator";
+  AGENTS.forEach(a=>{
+    const el=document.createElement("article"); el.className="box pending"+(a.human?" human":""); el.id="st-"+a.id;
+    el.style.setProperty("--f","var(--c-"+a.kind+"-f)"); el.style.setProperty("--s","var(--c-"+a.kind+"-s)");
+    el.style.gridColumn=String(a.col); el.style.gridRow=rowOf(a.row);
+    el.innerHTML='<span class="tick">'+TICK+'</span><div class="hd"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+ICONS[a.icon]+'</svg></span><span class="nm"></span></div><div class="rl"></div><div class="meta"><span class="pill">queued</span><span class="note"></span></div><div class="prog"><i></i></div>';
+    el.querySelector(".nm").textContent=a.name; el.querySelector(".rl").textContent=a.role;
+    add(el); nodes[a.id]=el;
+  });
+  OUTSIDE.forEach(a=>{
+    const el=document.createElement("article"); el.className="box outside"; el.id="st-"+a.id;
+    el.style.setProperty("--f","var(--c-"+a.kind+"-f)"); el.style.setProperty("--s","var(--c-"+a.kind+"-s)");
+    el.style.gridColumn=String(a.col); el.style.gridRow=rowOf(a.row);
+    el.innerHTML='<div class="hd"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+ICONS[a.icon]+'</svg></span><span class="nm"></span></div><div class="rl"></div><div class="meta"><span class="pill">the team</span></div>';
+    el.querySelector(".nm").textContent=a.name; el.querySelector(".rl").textContent=a.role;
+    add(el); nodes[a.id]=el;
+  });
+}
 
 const fin=s=>s==="done"||s==="ci"||s==="skipped";
 function drawWires(){
@@ -650,10 +660,11 @@ function drawWires(){
     out+=`<path class="${cls}" d="${p}" marker-end="url(#${mk})"/>`;
     if(cls.includes("flow-on")) out+=`<circle r="4.5" class="packet"><animateMotion dur="1.5s" repeatCount="indefinite" path="${p}"/></circle>`;
   }));
-  const F=R(nodes["be-fix"]), G=R(nodes["gate"]);
-  const yb=Math.max(F.b,G.b)+18;
-  out+=`<path class="wire loop" d="M${F.cx},${F.b} L${F.cx},${yb} L${G.cx},${yb} L${G.cx},${G.b+2}" marker-end="url(#a-loop)"/>`;
-  out+=`<text class="wlabel" x="${(F.cx+G.cx)/2}" y="${yb+14}" text-anchor="middle">↻ 6 · re-run UI + API tests, then re-check · max 2 rounds</text>`;
+  const lastFix=[...AGENTS].reverse().find(a=>a.id.startsWith("fix@"));
+  if(lastFix){ const F=R(nodes[lastFix.id]), G=R(nodes["gate"]);
+    const yb=Math.max(F.b,G.b)+18;
+    out+=`<path class="wire loop" d="M${F.cx},${F.b} L${F.cx},${yb} L${G.cx},${yb} L${G.cx},${G.b+2}" marker-end="url(#a-loop)"/>`;
+    out+=`<text class="wlabel" x="${(F.cx+G.cx)/2}" y="${yb+14}" text-anchor="middle">↻ 6 · re-run the tests, then re-check · max 2 rounds</text>`; }
   // after StoryRail: CI green → CDD → QA testing → sprint review (static, dashed)
   const C=R(nodes["cicd"]), D=R(nodes["x-cdd"]), Q=R(nodes["x-qa"]), V=R(nodes["x-review"]);
   const mx=(C.r+D.l)/2;
@@ -666,6 +677,8 @@ function setText(id,v){const e=$(id); if(e.textContent!==String(v)) e.textConten
 function bar(id,pct){$(id).style.width=Math.max(0,Math.min(100,pct||0))+"%";}
 
 function renderAgents(){
+  const sig=JSON.stringify((run.apps||[]).map(a=>[a.id,a.type,a.consumes]));
+  if(sig!==flowSig){ flowSig=sig; buildFlow(run.apps||[]); }
   AGENTS.forEach(a=>{
     const s=state[a.id]||{status:"pending"}; const el=nodes[a.id];
     const cls="box "+(s.status||"pending")+(a.human?" human":"");
@@ -717,7 +730,7 @@ function renderFeed(items){
   const ul=$("feed"); if(!items||!items.length) return; ul.innerHTML="";
   items.slice().reverse().forEach(it=>{ const key=it.t+it.agent+it.msg; const li=document.createElement("li"); li.className=(it.level||"")+(feedSeen.has(key)?"":" new"); feedSeen.add(key);
     const tm=document.createElement("time"); const d=new Date(it.t); tm.textContent=isNaN(d)?"":d.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit",second:"2-digit"});
-    const w=document.createElement("span"); w.className="who"; const mem=byStation[it.agent]; w.textContent=mem?mem.name:(it.agent||""); w.title=it.agent||"";
+    const w=document.createElement("span"); w.className="who"; const mem=memberOf(it.agent); w.textContent=mem?mem.name:(it.agent||""); w.title=it.agent||"";
     const m=document.createElement("span"); m.className="msg"; m.textContent=it.msg||"";
     li.append(tm,w,m); ul.append(li); });
 }
@@ -726,18 +739,24 @@ setInterval(()=>{ if(!run.startedAt) return; const end=run.endedAt?new Date(run.
 
 /* ---------- Squad view ---------- */
 const KIND={lead:["var(--brand)","var(--brand-soft)"],intake:["var(--c-intake-s)","var(--c-intake-f)"],dev:["var(--c-dev-s)","var(--c-dev-f)"],test:["var(--c-test-s)","var(--c-test-f)"],review:["var(--c-review-s)","var(--c-review-f)"],scan:["var(--c-scan-s)","var(--c-scan-f)"],fix:["var(--c-fix-s)","var(--c-fix-f)"],ship:["var(--c-ship-s)","var(--c-ship-f)"],qa:["var(--c-qa-s)","var(--c-qa-f)"],human:["var(--c-human-s)","var(--c-human-f)"]};
-const STATION_NAME=Object.fromEntries(AGENTS.map(a=>[a.id,a.name])); STATION_NAME.orchestrator="Orchestrator";
+let STATION_NAME={orchestrator:"Orchestrator"};
+// A member's stations for this run: "dev@backend" stands for the build of every backend application of the run.
+function memberStations(m){ const apps=run.apps||[]; return (m.stations||[]).flatMap(s=>{ const p=/^(dev|tests|fix)@(frontend|backend)$/.exec(s); return p?apps.filter(a=>a.type===p[2]).map(a=>p[1]+"@"+a.id):[s]; }); }
+function memberOf(station){ return station==="orchestrator"?squad.find(m=>m.kind==="lead"):squad.find(m=>memberStations(m).includes(station)); }
 const SAY={pending:"Waiting for an earlier step",running:"Working",done:"Done",failed:"Needs attention",waiting:"Waiting on you",skipped:"Not needed this run",outside:"Outside StoryRail"};
 const STATUS_ICON={done:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',failed:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round"><path d="M12 6v8M12 18h.01"/></svg>',waiting:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round"><path d="M12 6v8M12 18h.01"/></svg>'};
 let squad=[], engine="records", byStation={}, openId=null, lastFocus=null, chatCache={};
 
 function memberState(m){
   if(m.outOfScope) return {status:"outside",progress:0,note:m.outOfScope,per:[]};
-  if(!m.stations.length){ // orchestrator: follows the run
+  if(m.kind==="lead"){ // orchestrator: follows the run
     const st=run.startedAt?(run.endedAt?"done":"running"):"pending";
     return {status:st,progress:st==="done"?100:st==="running"?50:0,note:run.phase?("Phase: "+run.phase):"",per:[]};
   }
-  const per=m.stations.map(id=>({id,...(state[id]||{status:"pending",progress:0,note:""})}));
+  const sts=memberStations(m);
+  if(!sts.length){ const types=[...new Set((m.stations||[]).map(x=>(x.split("@")[1]||"")))].filter(Boolean).join(" or ");
+    return run.apps&&run.apps.length?{status:"skipped",progress:0,note:"No "+(types||"work")+" application in this story",per:[]}:{status:"pending",progress:0,note:"Waits for the story's applications",per:[]}; }
+  const per=sts.map(id=>({id,...(state[id]||{status:"pending",progress:0,note:""})}));
   const has=s=>per.some(p=>p.status===s);
   let status="pending";
   if(has("waiting")) status="waiting"; else if(has("failed")) status="failed"; else if(has("running")) status="running";
@@ -756,7 +775,7 @@ function avatar(m,ms,size){
   return d;
 }
 function ago(t){ if(!t) return ""; const s=Math.max(0,(Date.now()-new Date(t))/1000); if(s<60) return "just now"; if(s<3600) return Math.floor(s/60)+" min ago"; return Math.floor(s/3600)+" h ago"; }
-function lastFeed(m){ const ids=new Set(m.stations); if(m.kind==="lead") ids.add("orchestrator"); const f=(window.__feed||[]).filter(x=>ids.has(x.agent)); return f[f.length-1]; }
+function lastFeed(m){ const ids=new Set(memberStations(m)); if(m.kind==="lead") ids.add("orchestrator"); const f=(window.__feed||[]).filter(x=>ids.has(x.agent)); return f[f.length-1]; }
 
 function renderSquad(){
   if(!squad.length) return;
@@ -785,7 +804,7 @@ function renderSquad(){
   shown.forEach(([m,ms])=>{
     const row=document.createElement("div"); row.className="performer";
     const body=document.createElement("div");
-    const who=document.createElement("div"); who.className="who"; who.textContent=m.name; const r=document.createElement("span"); r.textContent=m.role+(ms.station&&m.stations.length>1?", "+STATION_NAME[ms.station]:""); who.append(r);
+    const who=document.createElement("div"); who.className="who"; who.textContent=m.name; const r=document.createElement("span"); r.textContent=m.role+(ms.station&&memberStations(m).length>1?", "+STATION_NAME[ms.station]:""); who.append(r);
     const doing=document.createElement("p"); doing.className="doing"; doing.textContent=ms.note||SAY[ms.status];
     const meta=document.createElement("div"); meta.className="meta";
     const pr=document.createElement("span"); pr.textContent=(SAY[ms.status]||"")+(ms.status==="running"?" · "+ms.progress+"%":"");
@@ -825,7 +844,7 @@ function renderDrawer(full){
   data.outputs.forEach(o=>{ const a=document.createElement("a"); a.href=o; a.target="_blank"; a.rel="noopener"; a.textContent=o.split("/").pop(); rep.append(a); });
   const thread=$("d-thread"); const atBottom=thread.scrollHeight-thread.scrollTop-thread.clientHeight<40;
   thread.innerHTML="";
-  const ids=new Set(m.stations); if(m.kind==="lead") ids.add("orchestrator");
+  const ids=new Set(memberStations(m)); if(m.kind==="lead") ids.add("orchestrator");
   const items=(window.__feed||[]).filter(f=>ids.has(f.agent)).map(f=>({t:f.t,kind:"log",level:f.level,text:f.msg}))
     .concat((data.chat||[]).map(c=>({t:c.t,kind:c.from==="you"?"you":"them",text:c.text})))
     .sort((a,b)=>new Date(a.t)-new Date(b.t));
@@ -842,40 +861,43 @@ let asking=null;
    A member's notes show in the chat once their step has started. */
 const DEMO_NOTES={
   "req-fetch":["Read #51 and its comments, and the two documents the functional analyst attached: the Screen document and the API document.",
-    "Two lanes: the Screen document adds a loan history panel, the API document a new endpoint; API tests come with the backend lane.",
-    "6 testable ACs: FE-AC1 to FE-AC3 (panel, empty state, error state), BE-AC4 to BE-AC6 (list, paging, 404).",
-    "The API document didn't give a page size, so I asked. You answered 20; I posted the answer on #51.",
-    "Contract: added GET /api/books/{id}/loans exactly as the API document names the fields."],
-  "fe-dev":["Built the panel as LoanHistory with its own useLoanHistory hook, so it can refetch after a loan toggle without reloading the book list.",
-    "Followed the Screen document for the texts: \"Never borrowed\" for the empty state, a retry button on errors.",
-    "New test ids: loan-history, loan-row, history-empty. 24 tests, 97% lines.",
-    "Round 1 fixes: added the live region for R1-01 with a regression test, and replaced a magic number Sonar flagged."],
-  "be-dev":["Added a Loan entity and LoanRepository with a paged query, newest loan first, page size 20 as you confirmed.",
-    "Unknown book returns 404 with the problem title from the API document (BE-AC6).",
-    "31 tests, mvn verify green, JaCoCo 91%.",
-    "Round 1 fixes: upgraded jackson-databind from 2.15.2 to 2.17.2 for the NexusIQ Severe violation, and shared the duplicated date format Sonar reported."],
-  "ui-tests":["9 new Playwright tests for FE-AC1 to FE-AC3 on the mocked API, using the test ids from Varunesh.",
-    "Covered the empty, error and many-loans states, plus keyboard focus after closing the panel.",
-    "Added axe and 360 px checks for the new panel. 82 UI tests green in total.",
-    "Round 2: re-ran the whole suite after Varunesh's fixes and added the regression test for R1-01 he asked for. 83/83 green."],
-  "api-tests":["Started the backend locally and ran the scenarios against localhost:8080.",
-    "12 new Cucumber scenarios for BE-AC4 to BE-AC6, one rule per AC; each scenario cleans up, so the testers can reuse them on QA.",
-    "Every response is checked against the contract. 130 scenarios green.",
-    "Round 2: rebuilt the backend with Meysam's jackson-databind upgrade and re-ran all 130 scenarios: still green, no JSON changes."],
-  "gate":["Round 1, all local: Sonar through the Maven plugin and sonar-scanner, Fortify SCA on the backend, the NexusIQ CLI on both.",
-    "Sonar: quality gate failed on one critical issue, a duplicated date format. Fortify: no critical or high. NexusIQ: jackson-databind 2.15.2 has a Severe policy violation.",
-    "Round 2: every gate passed, 0 findings."],
-  "reviewer":["Round 1: CHANGES_REQUESTED. One major: the empty history isn't announced to screen readers (R1-01). Two minors on naming and a missing test for page 2.",
-    "Round 2: APPROVE. Every AC is implemented, matches the documents and has a test tagged with it."],
-  "cicd":["Opened a merge request in each repo: backend !12, API tests !8, frontend !15. All MR pipelines went green.",
-    "You approved the merge. Merged backend first, then API tests, then frontend, and waited for each main pipeline.",
-    "All three pipelines green on main. Deployment with CDD is up to the team."],
+    "The story's Applications section names three apps. Discovery found them in GitLab: INSU-ta01 (backend), INSU-fa01 (backend, calls INSU-ta01) and INSU-sp01 (frontend, calls INSU-fa01).",
+    "9 testable ACs, 3 per app: ta01-AC1..3 (info endpoint, 404), fa01-AC1..3 (facade, error mapping), sp01-AC1..3 (screen, empty and error states).",
+    "The API document didn't say what INSU-fa01 returns when INSU-ta01 has no info, so I asked. You answered 404 \"Task info not found\"; posted on #51.",
+    "Contracts provider first: INSU-ta01's own contract, its copy in INSU-fa01, then INSU-fa01's contract and its copy in INSU-sp01."],
+  "dev@INSU-ta01":["Added GET /tasks/{id}/info with a query on the existing TaskRepository; nothing new in the schema.",
+    "No info for a task returns 404 with the problem title from the API document.",
+    "18 tests, mvn verify green.",
+    "Round 1 fix: Sonar flagged SQL built by string concatenation; switched to bound parameters."],
+  "dev@INSU-fa01":["Built against INSU-ta01's contract, not its code: a TaskInfoClient generated from the contract copy, with a WireMock stub of INSU-ta01 for the tests.",
+    "GET /info/{id} maps INSU-ta01's 404 to its own 404 problem, as you answered.",
+    "22 tests, mvn verify green.",
+    "Round 1 fix (R1-01): a timeout from INSU-ta01 now returns 503, as the API document says, with a regression test."],
+  "dev@INSU-sp01":["Built the info screen from the Screen document against INSU-fa01's contract copy, with the API mocked.",
+    "New test ids: task-info, task-info-empty. 26 tests, 96% lines.",
+    "Round 1 fix: upgraded axios from 1.6.0 to 1.7.4 for the NexusIQ Severe violation."],
+  "tests@INSU-ta01":["Ran INSU-ta01 on :8081 and 8 API scenarios for ta01-AC1..3. Each scenario cleans up after itself.",
+    "Round 2: re-ran after the SQL fix: 8/8 green."],
+  "tests@INSU-fa01":["Ran INSU-fa01 on :8082 with INSU-ta01 stubbed on :8182 from its contract: success, 404, 500 and a timeout.",
+    "10 scenarios for fa01-AC1..3, every response checked against INSU-fa01's contract.",
+    "Round 2: added the regression scenario for R1-01 (timeout → 503). 11/11 green."],
+  "tests@INSU-sp01":["9 Playwright tests for sp01-AC1..3 with INSU-fa01 mocked, using the new test ids.",
+    "Round 2: re-ran the whole suite after the axios upgrade: 9/9 green."],
+  "gate":["Round 1, all local on the three apps: Sonar on all, Fortify on the two backends, NexusIQ on all.",
+    "Sonar: one critical issue in INSU-ta01 (SQL concatenation). NexusIQ: axios 1.6.0 in INSU-sp01 is a Severe violation. Fortify: clean.",
+    "Round 2: every gate passed on every app, 0 findings."],
+  "reviewer":["Round 1: CHANGES_REQUESTED. One major in INSU-fa01: a timeout from INSU-ta01 came back as 500, the API document says 503 (R1-01). Two minors on naming.",
+    "Checked each app uses its provider exactly as the contract says: field names, status codes, problem titles.",
+    "Round 2: APPROVE. Every AC is implemented and has a test tagged with it."],
+  "cicd":["Opened a merge request per app: INSU-ta01 !21, INSU-fa01 !34, INSU-sp01 !47. All MR pipelines went green.",
+    "You approved the merge. Merged providers first: INSU-ta01, then INSU-fa01, then INSU-sp01, waiting for each main pipeline.",
+    "All three pipelines green on main. Deployment with CDD is up to the team, in the same order."],
   "orchestrator":["Relayed one question from Sindhu to you and posted the answer on #51.",
-    "Ran frontend and backend in parallel, then UI and API tests, then the review beside the scans.",
-    "Fix round 1 went to both developers; round 2 passed every gate.",
-    "Merged after your OK; labelled #51 Ready for QA."]
+    "Built all three apps at the same time, each against its provider's contract with the provider stubbed.",
+    "Fix round 1 went to the three developers; tests re-ran, and round 2 passed every gate.",
+    "Merged in dependency order after your OK; labelled #51 Ready for QA."]
 };
-function demoNotes(m){ const ids=m.kind==="lead"?["orchestrator"]:m.stations; const out=[];
+function demoNotes(m){ const ids=m.kind==="lead"?["orchestrator"]:memberStations(m); const out=[];
   ids.forEach(id=>{ const st=(state[id]||{}).status; if(id==="orchestrator"?!!run.startedAt:(st&&st!=="pending"&&st!=="skipped")) (DEMO_NOTES[id]||[]).forEach(n=>out.push(n)); });
   return out; }
 
@@ -884,8 +906,8 @@ function recordsAnswer(m){
   const ms=memberState(m); const lines=[];
   if(m.kind==="lead") lines.push(run.startedAt?"We're in the "+(run.phase||"first")+" phase of “"+(run.title||"this story")+"”.":"No story is running right now.");
   ms.per.forEach(p=>lines.push("My "+STATION_NAME[p.id]+" step is "+({pending:"not started yet",running:"in progress",done:"done",failed:"failed",waiting:"waiting for you",skipped:"not needed this run"}[p.status]||p.status)+(p.status==="running"&&p.progress?" ("+p.progress+"%)":"")+(p.note?": "+p.note:".")));
-  const ids=new Set(m.stations); if(m.kind==="lead") ids.add("orchestrator");
-  const notes=demoNotes(m); if(notes.length) lines.push((m.stations.includes("reviewer")?"From my review report":"From my work notes")+":\n"+notes.map(n=>"• "+n).join("\n"));
+  const ids=new Set(memberStations(m)); if(m.kind==="lead") ids.add("orchestrator");
+  const notes=demoNotes(m); if(notes.length) lines.push((memberStations(m).includes("reviewer")?"From my review report":"From my work notes")+":\n"+notes.map(n=>"• "+n).join("\n"));
   else{ const f=(window.__feed||[]).filter(x=>ids.has(x.agent)).slice(-3); if(f.length) lines.push("What I've reported lately:\n"+f.map(x=>"• "+x.msg).join("\n")); }
   return lines.join("\n");
 }
@@ -990,7 +1012,7 @@ function buildOrch(){
 // Which review round a reviewer is in: from its note ("Round 2: …"), else round 2+ once a developer has delivered fixes.
 function reviewRound(ms){
   const m=/round\s*(\d+)/i.exec(ms.note||""); if(m) return Number(m[1]);
-  return ["fe-fix","be-fix"].some(s=>(state[s]||{}).status==="done")?2:1;
+  return Object.entries(state).some(([k,v])=>k.startsWith("fix@")&&v&&v.status==="done")?2:1;
 }
 function renderOrch(){
   if(!squad.length) return; if(!orchBuilt) buildOrch(); if(!orchBuilt) return;
@@ -1187,7 +1209,7 @@ document.querySelector(".tabs").addEventListener("keydown",e=>{ if(e.key!=="Arro
   const cur=TABS.findIndex(t=>$("tab-"+t).getAttribute("aria-selected")==="true"); showTab(TABS[(cur+(e.key==="ArrowRight"?1:TABS.length-1))%TABS.length],true); });
 /* the dashboard always opens on Orchestration */
 
-const SQUAD=[{"id":"naveen","name":"Naveen","role":"Orchestrator","kind":"lead","stations":[],"brief":"orchestrator","about":"Runs the rail: reads the GitLab story with Sindhu, hands each stage to the right person, checks every gate and asks you when a decision is yours."},{"id":"sindhu","name":"Sindhu","role":"Functional analyst","kind":"intake","stations":["req-fetch"],"brief":"sr-req-fetch","about":"Reads the GitLab user story with its Screen and API documents, makes every acceptance criterion testable and asks you when something is unclear."},{"id":"varunesh","name":"Varunesh","role":"Frontend developer","kind":"dev","stations":["fe-dev","fe-fix"],"brief":"sr-fe-dev","about":"Builds the screens from the Screen document with unit tests, then fixes the review and scan findings for the frontend."},{"id":"meysam","name":"Meysam","role":"Backend developer","kind":"dev","stations":["be-dev","be-fix"],"brief":"sr-be-dev","about":"Builds the API from the API document with unit tests, then fixes the review and scan findings for the backend."},{"id":"antonello","name":"Antonello","role":"UI test engineer","kind":"test","stations":["ui-tests"],"brief":"sr-ui-tests","about":"Automates the screens with Playwright against a local build with a mocked API."},{"id":"jagan","name":"Jagan","role":"API test engineer","kind":"test","stations":["api-tests"],"brief":"sr-api-tests","about":"Writes the Cucumber + Java acceptance scenarios and runs them against the local backend."},{"id":"priya","name":"Priya","role":"Tech lead, strict reviewer","kind":"review","stations":["reviewer"],"brief":"sr-reviewer","about":"Reviews every change against the acceptance criteria, the documents and the conventions. Read-only."},{"id":"subramanian","name":"Subramanian","role":"Quality engineer","kind":"scan","stations":["gate"],"brief":"sr-scan","about":"Runs the Sonar, Fortify and NexusIQ scans on the change and reports what has to be fixed."},{"id":"charlotte","name":"Charlotte","role":"Release engineer","kind":"ship","stations":["cicd"],"brief":"orchestrator","about":"Opens the merge requests, merges after your OK and follows the GitLab CI pipeline on main until it is green. Deploying through CDD is done by the team."},{"id":"harri","name":"Harri","role":"QA tester","kind":"qa","stations":[],"brief":null,"about":"QA tester. Works outside StoryRail: tests the story in the QA environment and reports defects as GitLab issues.","outOfScope":"Tests in the QA environment after the CDD deployment: the prepared test cases, E2E automation and manual testing."},{"id":"laurence","name":"Laurence","role":"Product owner","kind":"human","stations":[],"brief":null,"about":"Product owner. Works outside StoryRail: brings the requirement from the business and signs off at the sprint review.","outOfScope":"Talks to the business, and signs off the story with the functional analyst at the sprint review."}];
+const SQUAD=[{"id":"naveen","name":"Naveen","role":"Orchestrator","kind":"lead","stations":[],"brief":"orchestrator","about":"Runs the rail: reads the GitLab story with Sindhu, hands each stage to the right person, checks every gate and asks you when a decision is yours."},{"id":"sindhu","name":"Sindhu","role":"Functional analyst","kind":"intake","stations":["req-fetch"],"brief":"sr-req-fetch","about":"Reads the GitLab user story, its Applications section and its Screen and API documents, finds the apps, makes every acceptance criterion testable and asks you when something is unclear."},{"id":"varunesh","name":"Varunesh","role":"Frontend developer","kind":"dev","stations":["dev@frontend","fix@frontend"],"brief":"sr-fe-dev","about":"Builds the frontend applications from the Screen document with unit tests, then fixes the review and scan findings of the frontends."},{"id":"meysam","name":"Meysam","role":"Backend developer","kind":"dev","stations":["dev@backend","fix@backend"],"brief":"sr-be-dev","about":"Builds the backend applications from the API document with unit tests, one in parallel per app, then fixes the review and scan findings of the backends."},{"id":"antonello","name":"Antonello","role":"UI test engineer","kind":"test","stations":["tests@frontend"],"brief":"sr-ui-tests","about":"Automates the screens of each frontend with Playwright against a local build with a mocked API."},{"id":"jagan","name":"Jagan","role":"API test engineer","kind":"test","stations":["tests@backend"],"brief":"sr-api-tests","about":"Writes and runs the Cucumber + Java API scenarios of each backend against it running locally, with the apps it calls stubbed."},{"id":"priya","name":"Priya","role":"Tech lead, strict reviewer","kind":"review","stations":["reviewer"],"brief":"sr-reviewer","about":"Reviews every change against the acceptance criteria, the documents and the conventions. Read-only."},{"id":"subramanian","name":"Subramanian","role":"Quality engineer","kind":"scan","stations":["gate"],"brief":"sr-scan","about":"Runs the Sonar, Fortify and NexusIQ scans on the change and reports what has to be fixed."},{"id":"charlotte","name":"Charlotte","role":"Release engineer","kind":"ship","stations":["cicd"],"brief":"orchestrator","about":"Opens the merge requests, merges after your OK and follows the GitLab CI pipeline on main until it is green. Deploying through CDD is done by the team."},{"id":"harri","name":"Harri","role":"QA tester","kind":"qa","stations":[],"brief":null,"about":"QA tester. Works outside StoryRail: tests the story in the QA environment and reports defects as GitLab issues.","outOfScope":"Tests in the QA environment after the CDD deployment: the prepared test cases, E2E automation and manual testing."},{"id":"laurence","name":"Laurence","role":"Product owner","kind":"human","stations":[],"brief":null,"about":"Product owner. Works outside StoryRail: brings the requirement from the business and signs off at the sprint review.","outOfScope":"Talks to the business, and signs off the story with the functional analyst at the sprint review."}];
 squad=SQUAD; squad.forEach(m=>m.stations.forEach(s=>byStation[s]=m)); byStation.orchestrator=squad.find(m=>m.kind==="lead");
 engine="records";
 setInterval(()=>{ if(!$("view-squad").hidden) renderSquad(); },15000);
@@ -1197,60 +1219,61 @@ new ResizeObserver(()=>drawWires()).observe(flow);
 window.addEventListener("load",drawWires);
 if(document.fonts) document.fonts.ready.then(drawWires);
 
-/* ---------- Demo replay: a sample run of GitLab story #51, on a loop ---------- */
+/* ---------- Demo replay: GitLab story #51 across three applications (INSU-ta01 ← INSU-fa01 ← INSU-sp01), on a loop ---------- */
 (()=>{
   const S="set", L="log", R="run", M="metric", F="findings", X="security";
   // [seconds, op, ...args] — the same operations the agents send through scripts/storyrail-status.mjs
+  const TA="INSU-ta01", FA="INSU-fa01", SP="INSU-sp01";
+  const APPS=[{id:TA,type:"backend",label:"task API",consumes:[]},{id:FA,type:"backend",label:"facade API",consumes:[TA]},{id:SP,type:"frontend",label:"frontend",consumes:[FA]}];
   const SCRIPT=[
-    [0,R,"phase","Requirements"],[0,L,"orchestrator","info","Run started for GitLab issue #51: Loan history for a book"],
-    [2,S,"req-fetch","running",20,"Reading #51 and its comments"],
-    [5,S,"req-fetch","running",50,"Reading the Screen and API documents"],
-    [8,S,"req-fetch","waiting",80,"1 question for you"],[8,L,"req-fetch","warn","Open question: the API document doesn't say the page size. 20?"],
-    [12,L,"orchestrator","info","You answered: page size 20. Posted on #51"],
-    [13,S,"req-fetch","done",100,"frontend, backend · 6 ACs"],[13,L,"req-fetch","ok","Spec written: 2 lanes, 6 ACs; contract adds GET /api/books/{id}/loans"],
-    [14,R,"phase","Build"],[14,L,"orchestrator","info","Build: frontend and backend in parallel"],
-    [15,S,"fe-dev","running",10,"Reading the spec and the Screen document"],[15,S,"be-dev","running",10,"Reading the spec and the API document"],
-    [20,S,"fe-dev","running",45,"Building the loan history panel"],[20,S,"be-dev","running",50,"Loan entity, repository and paging"],
-    [25,S,"fe-dev","running",80,"Tests for the empty and error states"],[25,S,"be-dev","running",85,"GET /api/books/{id}/loans, 404 for unknown books"],
-    [28,S,"be-dev","done",100,"31 tests · mvn verify green · JaCoCo 91%"],[28,M,"unit-be",31,31],[28,L,"be-dev","ok","Endpoint done: 200 with paging, 404 for unknown books"],
-    [30,S,"fe-dev","done",100,"24 tests · 97% lines"],[30,M,"unit-fe",24,24],[30,L,"fe-dev","ok","History panel done; new test ids: loan-history, loan-row, history-empty"],
-    [31,R,"phase","Isolated tests"],
-    [32,S,"ui-tests","running",15,"Planning UI tests for FE-AC1 to FE-AC3"],[32,S,"api-tests","running",15,"Starting the backend locally"],
-    [37,S,"ui-tests","running",70,"Running 9 new tests on the mocked API"],[37,S,"api-tests","running",65,"Running 12 new scenarios on localhost:8080"],
-    [41,S,"api-tests","done",100,"12 scenarios · 3 ACs"],[41,M,"api",130,130],[41,L,"api-tests","ok","130 scenarios green against the local backend"],
-    [43,S,"ui-tests","done",100,"9 tests · 3 ACs"],[43,M,"ui",82,82],[43,L,"ui-tests","ok","82 UI tests green, including axe and 360 px checks"],
-    [44,R,"phase","Review + scans"],
-    [45,S,"reviewer","running",20,"Round 1: reading both diffs"],[45,S,"gate","running",15,"Sonar on frontend and backend"],
-    [49,S,"gate","running",50,"Fortify on the backend"],[52,S,"gate","running",80,"NexusIQ policy evaluation"],
-    [54,S,"reviewer","done",100,"CHANGES_REQUESTED · 0 / 1 / 2"],[54,L,"reviewer","warn","R1-01 (major): the empty history isn't announced to screen readers"],
-    [56,S,"gate","done",100,"3 findings · Sonar 1 · Fortify ok · NexusIQ 1"],[56,"scans",1,0,1],[56,F,0,2,4,0],
-    [56,L,"gate","warn","NexusIQ: jackson-databind 2.15.2 Severe; Sonar: duplicated date format (critical)"],
-    [57,R,"phase","Fix"],[57,L,"orchestrator","info","Fix round 1: frontend and backend developers in parallel"],
-    [58,S,"fe-fix","running",20,"Fixing 3 findings, round 1"],[58,S,"be-fix","running",20,"Fixing 3 findings, round 1"],
-    [62,S,"be-fix","running",60,"Upgrading jackson-databind for NexusIQ"],[62,S,"fe-fix","running",70,"Live region + regression test for R1-01"],
-    [66,S,"fe-fix","done",100,"3/3 fixed · 0 disputed"],[67,S,"be-fix","done",100,"3/3 fixed · 0 disputed"],[67,F,0,0,0,6],
-    [67,L,"be-fix","ok","jackson-databind 2.17.2, date format shared; 2 regression tests"],
-    [68,R,"phase","Re-run tests"],[68,L,"orchestrator","info","Fixes changed code on both sides: re-running the UI and API suites"],
-    [68,S,"ui-tests","running",20,"Round 2: re-running the UI tests"],[68,S,"api-tests","running",20,"Round 2: re-running the API scenarios"],
-    [71,S,"ui-tests","running",70,"Round 2: 83 tests, incl. the R1-01 regression"],[71,S,"api-tests","running",75,"Round 2: backend rebuilt with jackson 2.17.2"],
-    [73,S,"ui-tests","done",100,"Round 2: 83/83 green"],[73,M,"ui",83,83],[73,S,"api-tests","done",100,"Round 2: 130/130 green"],[73,M,"api",130,130],
-    [73,L,"api-tests","ok","Round 2: all 130 scenarios still green after the jackson upgrade"],
-    [74,R,"phase","Review + scans"],[74,S,"reviewer","running",50,"Round 2: checking the fixes"],[74,S,"gate","running",40,"Round 2: re-scanning"],
-    [79,S,"gate","done",100,"0 findings · Sonar ok · Fortify ok · NexusIQ ok"],[79,"scans",0,0,0],
-    [80,S,"reviewer","done",100,"APPROVE · 0 / 0 / 0"],[80,L,"reviewer","ok","Round 2: APPROVE, every AC met and tested"],
-    [81,R,"phase","Release"],[81,S,"cicd","running",10,"Opening merge requests in 3 repos"],
-    [85,S,"cicd","waiting",30,"MRs green: backend !12, API tests !8, frontend !15. Merge?"],[85,L,"cicd","info","All MR pipelines green; waiting for your OK to merge"],
-    [90,S,"cicd","running",50,"Backend merged · CI running on main"],[90,L,"orchestrator","info","You approved the merge"],
-    [95,S,"cicd","running",70,"API tests merged · CI running on main"],[99,S,"cicd","running",85,"Frontend merged · CI running on main"],
-    [104,S,"cicd","done",100,"3 MRs merged · CI green on main"],[104,L,"cicd","ok","Backend, API tests and frontend pipelines green on main"],
-    [105,R,"phase","Done"],[105,L,"orchestrator","ok","#51 labelled Ready for QA; over to the team for CDD and QA testing"],
-    [105,"end"]
+    [0,R,"phase","Requirements"],[0,L,"orchestrator","info","Run started for GitLab issue #51: Task info on the screen"],
+    [2,S,"req-fetch","running",20,"Reading #51, its Applications and documents"],
+    [4,"apps"],[4,L,"req-fetch","info","Found INSU-ta01 (backend), INSU-fa01 (backend, calls ta01), INSU-sp01 (frontend, calls fa01)"],
+    [6,S,"req-fetch","running",60,"Contracts: INSU-ta01 first, then INSU-fa01"],
+    [8,S,"req-fetch","waiting",80,"1 question for you"],[8,L,"req-fetch","warn","The API document doesn't say what INSU-fa01 returns when INSU-ta01 has no info: 404 or empty?"],
+    [11,L,"orchestrator","info","You answered: 404 \"Task info not found\". Posted on #51"],
+    [12,S,"req-fetch","done",100,"3 apps · 9 ACs"],[12,L,"req-fetch","ok","Spec: 3 ACs per app; ta01 and fa01 contracts updated, copies in fa01 and sp01"],
+    [13,R,"phase","Build"],[13,L,"orchestrator","info","Build: all 3 apps at the same time, each against the contracts"],
+    [14,S,"dev@"+TA,"running",10,"Reading the spec and the API document"],[14,S,"dev@"+FA,"running",10,"Reading the spec and ta01's contract"],[14,S,"dev@"+SP,"running",10,"Reading the Screen document"],
+    [19,S,"dev@"+TA,"running",50,"Task info query + GET /tasks/{id}/info"],[19,S,"dev@"+FA,"running",50,"TaskInfoClient from ta01's contract, WireMock stub"],[19,S,"dev@"+SP,"running",45,"Info screen from the Screen document"],
+    [24,S,"dev@"+TA,"done",100,"18 tests · verify green"],[24,M,"unit@"+TA,18,18],[24,L,"dev@"+TA,"ok","INSU-ta01: GET /tasks/{id}/info done, 404 when the task has no info"],
+    [26,S,"dev@"+FA,"done",100,"22 tests · verify green"],[26,M,"unit@"+FA,22,22],[26,L,"dev@"+FA,"ok","INSU-fa01: GET /info/{id} done; ta01's 404 becomes its own 404 problem"],
+    [28,S,"dev@"+SP,"done",100,"26 tests · 96% lines"],[28,M,"unit@"+SP,26,26],[28,L,"dev@"+SP,"ok","INSU-sp01: info screen done; new test ids: task-info, task-info-empty"],
+    [29,R,"phase","Isolated tests"],
+    [30,S,"tests@"+TA,"running",20,"API scenarios on :8081"],[30,S,"tests@"+FA,"running",20,"On :8082, ta01 stubbed on :8182"],[30,S,"tests@"+SP,"running",20,"Playwright, fa01 mocked"],
+    [36,S,"tests@"+TA,"running",70,"Running 8 scenarios"],[36,S,"tests@"+FA,"running",65,"Running 10 scenarios incl. ta01 errors"],[36,S,"tests@"+SP,"running",70,"Running 9 tests"],
+    [40,S,"tests@"+TA,"done",100,"8 scenarios · 3 ACs"],[40,M,"api@"+TA,8,8],
+    [41,S,"tests@"+FA,"done",100,"10 scenarios · 3 ACs"],[41,M,"api@"+FA,10,10],[41,L,"tests@"+FA,"ok","INSU-fa01 green with ta01 stubbed: success, 404, 500 and a timeout"],
+    [42,S,"tests@"+SP,"done",100,"9 tests · 3 ACs"],[42,M,"ui@"+SP,9,9],
+    [43,R,"phase","Review + scans"],
+    [44,S,"reviewer","running",20,"Round 1: 3 diffs and the contracts"],[44,S,"gate","running",15,"Sonar on 3 apps"],
+    [48,S,"gate","running",50,"Fortify on ta01 and fa01"],[51,S,"gate","running",80,"NexusIQ on 3 apps"],
+    [53,S,"reviewer","done",100,"CHANGES_REQUESTED · 0 / 1 / 2"],[53,L,"reviewer","warn","R1-01 (major, INSU-fa01): a ta01 timeout comes back as 500; the API document says 503"],
+    [55,S,"gate","done",100,"2 findings · Sonar 1 · Fortify ok · NexusIQ 1"],[55,"scans",1,0,1],[55,F,0,2,3,0],
+    [55,L,"gate","warn","NexusIQ (INSU-sp01): axios 1.6.0 Severe; Sonar (INSU-ta01): SQL built by string concatenation"],
+    [56,R,"phase","Fix"],[56,L,"orchestrator","info","Fix round 1: the three apps' developers side by side"],
+    [57,S,"fix@"+TA,"running",20,"Fixing 1 finding, round 1"],[57,S,"fix@"+FA,"running",20,"Fixing 2 findings, round 1"],[57,S,"fix@"+SP,"running",20,"Fixing 2 findings, round 1"],
+    [60,S,"fix@"+FA,"running",70,"Timeout → 503, regression test"],[60,S,"fix@"+SP,"running",70,"Upgrading axios to 1.7.4"],
+    [61,S,"fix@"+TA,"done",100,"1/1 fixed · bound parameters"],[62,S,"fix@"+SP,"done",100,"2/2 fixed · axios 1.7.4"],[63,S,"fix@"+FA,"done",100,"2/2 fixed · 0 disputed"],[63,F,0,0,0,5],
+    [64,R,"phase","Re-run tests"],[64,L,"orchestrator","info","Fixes changed all 3 apps: re-running their tests"],
+    [64,S,"tests@"+TA,"running",30,"Round 2: re-running the API scenarios"],[64,S,"tests@"+FA,"running",30,"Round 2: re-running, + R1-01 regression"],[64,S,"tests@"+SP,"running",30,"Round 2: re-running the UI tests"],
+    [68,S,"tests@"+TA,"done",100,"Round 2: 8/8 green"],[68,S,"tests@"+FA,"done",100,"Round 2: 11/11 green"],[68,M,"api@"+FA,11,11],[68,S,"tests@"+SP,"done",100,"Round 2: 9/9 green"],
+    [69,R,"phase","Review + scans"],[69,S,"reviewer","running",50,"Round 2: checking the fixes"],[69,S,"gate","running",40,"Round 2: re-scanning 3 apps"],
+    [74,S,"gate","done",100,"0 findings · Sonar ok · Fortify ok · NexusIQ ok"],[74,"scans",0,0,0],
+    [75,S,"reviewer","done",100,"APPROVE · 0 / 0 / 0"],[75,L,"reviewer","ok","Round 2: APPROVE, every AC met, contracts used exactly"],
+    [76,R,"phase","Release"],[76,S,"cicd","running",10,"Opening 3 merge requests"],
+    [80,S,"cicd","waiting",25,"MRs green: INSU-ta01 !21 → INSU-fa01 !34 → INSU-sp01 !47. Merge?"],[80,L,"cicd","info","All MR pipelines green; waiting for your OK to merge"],
+    [85,S,"cicd","running",45,"INSU-ta01 merged · CI running"],[85,L,"orchestrator","info","You approved the merge"],
+    [89,S,"cicd","running",65,"INSU-fa01 merged · CI running"],[93,S,"cicd","running",85,"INSU-sp01 merged · CI running"],
+    [97,S,"cicd","done",100,"3 apps merged · CI green"],[97,L,"cicd","ok","CI green on main: INSU-ta01, then INSU-fa01, then INSU-sp01"],
+    [98,R,"phase","Done"],[98,L,"orchestrator","ok","#51 labelled Ready for QA; deploy with CDD in the order ta01, fa01, sp01"],
+    [98,"end"]
   ];
-  const LOOP=118; const STATIONS=AGENTS.map(a=>a.id);
+  const LOOP=110; const STATIONS=["req-fetch","reviewer","gate","cicd"];
   let start=0, next=0, feed=[];
   function reset(){
     state=Object.fromEntries(STATIONS.map(s=>[s,{status:"pending",progress:0,note:""}]));
-    run={issues:[51],title:"Loan history for a book",repo:"https://gitlab.example.com/squad/backlog",phase:"Requirements",startedAt:new Date().toISOString(),metrics:{}};
+    run={issues:[51],title:"Task info on the screen",repo:"https://gitlab.example.com/insu/backlog",phase:"Requirements",startedAt:new Date().toISOString(),metrics:{}};
     feed=[]; next=0; start=performance.now(); feedSeen.clear(); $("feed").innerHTML="";
     ["k-unit","k-api","k-ui","k-rev","k-sec"].forEach(id=>{ $(id).textContent="—"; }); ["kb-unit","kb-api","kb-ui","kb-rev","kb-sec"].forEach(id=>bar(id,0)); $("findings").hidden=true;
     Object.values(chatCache).forEach(c=>{ c.chat=[]; });
@@ -1260,7 +1283,9 @@ if(document.fonts) document.fonts.ready.then(drawWires);
     if(op===S) state[a]={status:b,progress:b==="done"?100:c,note:d||""};
     else if(op===L) feed.push({t:now,agent:a,level:b,msg:c});
     else if(op===R) run[a]=b;
-    else if(op===M){ run.metrics[a]={passed:b,total:c}; const p=["unit-fe","unit-be"].map(k=>run.metrics[k]).filter(Boolean); if(p.length) run.metrics.unit=p.reduce((x,y)=>({passed:x.passed+y.passed,total:x.total+y.total}),{passed:0,total:0}); }
+    else if(op===M){ run.metrics.byApp=run.metrics.byApp||{}; run.metrics.byApp[a]={passed:b,total:c};
+      ["unit","api","ui"].forEach(k=>{ const p=Object.entries(run.metrics.byApp).filter(([x])=>x.startsWith(k+"@")).map(([,v])=>v); if(p.length) run.metrics[k]=p.reduce((x,y)=>({passed:x.passed+y.passed,total:x.total+y.total}),{passed:0,total:0}); }); }
+    else if(op==="apps"){ run.apps=APPS.map(x=>({...x})); APPS.forEach(x=>["dev","tests","fix"].forEach(k=>{ state[k+"@"+x.id]={status:"pending",progress:0,note:""}; })); }
     else if(op===F) run.metrics.review={blocker:a,major:b,minor:c,fixed:d};
     else if(op===X) run.metrics.security={vulns:a,lint:b};
     else if(op==="scans") run.metrics.scans={sonar:a,fortify:b,nexusiq:c};

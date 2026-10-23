@@ -9,10 +9,14 @@ As a … I want … so that …
 - AC1: …
 - AC2: …
 
-## Which parts change?
+## Applications
 
-- [ ] Frontend (screens)
-- [ ] Backend (API / data)
+One line per application this story changes, starting with its name; say which other application it calls.
+StoryRail finds each one in GitLab by this name.
+
+- INSU-ta01 (task API): what changes, e.g. new endpoint GET /tasks/{id}/info, reads from the DB
+- INSU-fa01 (facade API): what changes, calls INSU-ta01
+- INSU-sp01 (frontend): what changes, calls INSU-fa01
 
 ## Functional documents
 

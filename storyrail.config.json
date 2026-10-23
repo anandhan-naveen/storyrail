@@ -1,8 +1,9 @@
 {
-  "$comment": "StoryRail for the office squad: GitLab for stories, merge requests and CI; Sonar, Fortify and NexusIQ for quality scans. Fill in every TODO(office) value (`node scripts/storyrail-workspace.mjs todo` lists them). See docs/storyrail/SETUP.md.",
+  "$comment": "StoryRail for the office squad. Set once for the whole squad and commit; a developer only needs a GitLab token. The applications of a story come from its \"## Applications\" section in GitLab, not from this file. `node scripts/storyrail-workspace.mjs todo` lists what is still to fill in. See docs/storyrail/SETUP.md.",
   "gitlab": {
     "$comment": "Your GitLab. Agents reach it with a personal access token (scope api) through scripts/storyrail-gitlab.mjs, or through the GitLab MCP server if it is configured in Bob. Never put the token in this file.",
     "url": "TODO(office): https://gitlab.<company>",
+    "group": "TODO(office): the GitLab group your applications live in, e.g. insu",
     "tokenEnv": "GITLAB_TOKEN",
     "mcpServer": "gitlab"
   },
@@ -16,55 +17,43 @@
     "project": "TODO(office): group/storyrail",
     "defaultBranch": "main"
   },
-  "projects": {
+  "apps": {
+    "$comment": "Applications are found by name in gitlab.group (INSU-ta01 → a project called INSU-ta01 or INSU-ta01-…), and frontend or backend is read from the repo. Only add an entry to map when a name doesn't match its project, e.g. \"INSU-ta01\": \"insu/task-api\", or { \"project\": \"insu/x\", \"type\": \"backend\" }.",
+    "map": {}
+  },
+  "appTypes": {
+    "$comment": "How each kind of application is built and tested. The same for every app of that kind; an app's own README or package.json scripts win when they say otherwise.",
     "frontend": {
-      "project": "TODO(office): group/library-frontend",
-      "cloneUrl": "TODO(office): https://gitlab.<company>/group/library-frontend.git",
-      "path": "projects/frontend",
-      "defaultBranch": "main",
-      "contract": "contract/openapi.yaml"
+      "verify": "npm ci && npm run lint && npm run typecheck --if-present && npm test && npm run build",
+      "uiTests": "npx playwright test",
+      "localUrl": "http://localhost:4173"
     },
     "backend": {
-      "project": "TODO(office): group/library-backend",
-      "cloneUrl": "TODO(office): https://gitlab.<company>/group/library-backend.git",
-      "path": "projects/backend",
-      "defaultBranch": "main",
-      "contract": "docs/api/openapi.yaml"
-    },
-    "apiTests": {
-      "project": "TODO(office): group/library-api-tests",
-      "cloneUrl": "TODO(office): https://gitlab.<company>/group/library-api-tests.git",
-      "path": "projects/api-tests",
-      "defaultBranch": "main",
-      "contract": "contract/openapi.yaml",
-      "$comment": "Cucumber + Java acceptance tests for the backend, run against the local backend. Part of the backend lane. Set to null if your API automation lives in the backend repo."
+      "verify": "mvn -B verify",
+      "run": "mvn -B -q spring-boot:run",
+      "apiTests": "mvn -B verify -Dcucumber.filter.tags=\"not @wip\"",
+      "stub": "WireMock (or the stub tool the app's tests already use), fed from the provider's contract"
     }
   },
   "mergeRequests": {
-    "$comment": "Step 7: one MR per repo in the run. waitForMrPipeline: wait for the MR pipeline before asking you to merge. mergeOrder: the order the MRs are merged in; after each merge StoryRail waits for the pipeline on the default branch.",
+    "$comment": "Step 7: one MR per application in the run, merged in dependency order (providers first, from the story's Applications section). waitForMrPipeline: wait for the MR pipeline before asking you to merge.",
     "squash": true,
     "removeSourceBranch": true,
-    "waitForMrPipeline": true,
-    "mergeOrder": [
-      "backend",
-      "apiTests",
-      "frontend"
-    ]
+    "waitForMrPipeline": true
+  },
+  "build": {
+    "$comment": "Step 2. parallel: build every application at the same time, each against the contracts of the apps it calls (stubbed in its tests). sequential: build them one after the other, providers first.",
+    "mode": "parallel"
   },
   "scans": {
-    "$comment": "Quality scans in steps 4 and 6. mode: local = run the command on your machine before anything is pushed; ci = push the branch, let its GitLab pipeline run the scan job, then read the result; off = skip. Commands run from the project folder; $BRANCH is the run branch. Tokens come from environment variables, never from this file.",
+    "$comment": "Quality scans in steps 4 and 6, per kind of application. mode: local = run the command on your machine before anything is pushed; ci = push the branch, let its GitLab pipeline run the scan job, then read the result; off = skip. Commands run from the app's folder; $APP is the application name, $BRANCH the run branch. Tokens come from environment variables, never from this file.",
     "sonar": {
       "mode": "local",
       "hostUrlEnv": "SONAR_HOST_URL",
       "tokenEnv": "SONAR_TOKEN",
       "commands": {
-        "frontend": "TODO(office): e.g. npx sonar-scanner -Dsonar.branch.name=$BRANCH",
-        "backend": "TODO(office): e.g. mvn -B -q verify sonar:sonar -Dsonar.branch.name=$BRANCH -Dsonar.qualitygate.wait=true",
-        "apiTests": null
-      },
-      "projectKeys": {
-        "frontend": "TODO(office)",
-        "backend": "TODO(office)"
+        "frontend": "TODO(office): e.g. npx sonar-scanner -Dsonar.projectKey=$APP -Dsonar.branch.name=$BRANCH",
+        "backend": "TODO(office): e.g. mvn -B -q verify sonar:sonar -Dsonar.projectKey=$APP -Dsonar.branch.name=$BRANCH -Dsonar.qualitygate.wait=true"
       },
       "ciJob": "sonar",
       "gate": "Quality gate passed and no open blocker or critical issue on new code"
@@ -72,9 +61,8 @@
     "fortify": {
       "mode": "local",
       "commands": {
-        "frontend": "TODO(office): e.g. scancentral -url $SCANCENTRAL_URL start -bt none -upload -application <app> -version <version>",
-        "backend": "TODO(office): e.g. sourceanalyzer -b storyrail -clean && sourceanalyzer -b storyrail mvn -B -q package -DskipTests && sourceanalyzer -b storyrail -scan -f target/fortify.fpr",
-        "apiTests": null
+        "frontend": "TODO(office): e.g. scancentral -url $SCANCENTRAL_URL start -bt none -upload -application $APP -version $BRANCH",
+        "backend": "TODO(office): e.g. sourceanalyzer -b $APP -clean && sourceanalyzer -b $APP mvn -B -q package -DskipTests && sourceanalyzer -b $APP -scan -f target/fortify.fpr"
       },
       "results": "TODO(office): e.g. FPRUtility -information -search -query \"[fortify priority order]:critical OR [fortify priority order]:high\" -project target/fortify.fpr",
       "ciJob": "fortify",
@@ -86,9 +74,8 @@
       "userEnv": "NEXUS_IQ_USER",
       "tokenEnv": "NEXUS_IQ_TOKEN",
       "commands": {
-        "frontend": "TODO(office): e.g. java -jar $NEXUS_IQ_CLI -s $NEXUS_IQ_URL -a $NEXUS_IQ_USER:$NEXUS_IQ_TOKEN -i <frontend-app-id> -t build -r nexus-iq.json .",
-        "backend": "TODO(office): e.g. java -jar $NEXUS_IQ_CLI -s $NEXUS_IQ_URL -a $NEXUS_IQ_USER:$NEXUS_IQ_TOKEN -i <backend-app-id> -t build -r nexus-iq.json target/",
-        "apiTests": null
+        "frontend": "TODO(office): e.g. java -jar $NEXUS_IQ_CLI -s $NEXUS_IQ_URL -a $NEXUS_IQ_USER:$NEXUS_IQ_TOKEN -i $APP -t build -r nexus-iq.json .",
+        "backend": "TODO(office): e.g. java -jar $NEXUS_IQ_CLI -s $NEXUS_IQ_URL -a $NEXUS_IQ_USER:$NEXUS_IQ_TOKEN -i $APP -t build -r nexus-iq.json target/"
       },
       "ciJob": "nexus-iq",
       "gate": "No policy violation at Critical or Severe"
@@ -115,7 +102,7 @@
     }
   },
   "squad": {
-    "$comment": "The squad as shown on the dashboard. stations = the status ids each member reports on; brief = the mode's rule folder (sr-*) or 'orchestrator'; outOfScope = a person who works outside StoryRail (shown greyed, can't be asked).",
+    "$comment": "The squad as shown on the dashboard. stations = the status ids each member reports on; dev@frontend / dev@backend etc. mean that step for every frontend / backend application of the run. brief = the mode's rule folder (sr-*) or 'orchestrator'; outOfScope = a person who works outside StoryRail.",
     "members": [
       {
         "id": "naveen",
@@ -135,7 +122,7 @@
           "req-fetch"
         ],
         "brief": "sr-req-fetch",
-        "about": "Reads the GitLab user story with its Screen and API documents, makes every acceptance criterion testable and asks you when something is unclear."
+        "about": "Reads the GitLab user story, its Applications section and its Screen and API documents, finds the apps, makes every acceptance criterion testable and asks you when something is unclear."
       },
       {
         "id": "varunesh",
@@ -143,11 +130,11 @@
         "role": "Frontend developer",
         "kind": "dev",
         "stations": [
-          "fe-dev",
-          "fe-fix"
+          "dev@frontend",
+          "fix@frontend"
         ],
         "brief": "sr-fe-dev",
-        "about": "Builds the screens from the Screen document with unit tests, then fixes the review and scan findings for the frontend."
+        "about": "Builds the frontend applications from the Screen document with unit tests, then fixes the review and scan findings of the frontends."
       },
       {
         "id": "meysam",
@@ -155,11 +142,11 @@
         "role": "Backend developer",
         "kind": "dev",
         "stations": [
-          "be-dev",
-          "be-fix"
+          "dev@backend",
+          "fix@backend"
         ],
         "brief": "sr-be-dev",
-        "about": "Builds the API from the API document with unit tests, then fixes the review and scan findings for the backend."
+        "about": "Builds the backend applications from the API document with unit tests, one in parallel per app, then fixes the review and scan findings of the backends."
       },
       {
         "id": "antonello",
@@ -167,10 +154,10 @@
         "role": "UI test engineer",
         "kind": "test",
         "stations": [
-          "ui-tests"
+          "tests@frontend"
         ],
         "brief": "sr-ui-tests",
-        "about": "Automates the screens with Playwright against a local build with a mocked API."
+        "about": "Automates the screens of each frontend with Playwright against a local build with a mocked API."
       },
       {
         "id": "jagan",
@@ -178,10 +165,10 @@
         "role": "API test engineer",
         "kind": "test",
         "stations": [
-          "api-tests"
+          "tests@backend"
         ],
         "brief": "sr-api-tests",
-        "about": "Writes the Cucumber + Java acceptance scenarios and runs them against the local backend."
+        "about": "Writes and runs the Cucumber + Java API scenarios of each backend against it running locally, with the apps it calls stubbed."
       },
       {
         "id": "priya",
@@ -240,13 +227,11 @@
     "outputs": {
       "req-fetch": [
         "spec.md",
+        "apps.json",
         "docs/*"
       ],
-      "ui-tests": [
-        "ui-findings.md"
-      ],
-      "api-tests": [
-        "api-findings.md"
+      "tests@*": [
+        "tests-*.md"
       ],
       "reviewer": [
         "review-round*.md"
@@ -254,11 +239,8 @@
       "gate": [
         "scan-round*.md"
       ],
-      "fe-fix": [
-        "fixes-round*-fe.md"
-      ],
-      "be-fix": [
-        "fixes-round*-be.md"
+      "fix@*": [
+        "fixes-round*-$APP.md"
       ],
       "cicd": [
         "release.md"

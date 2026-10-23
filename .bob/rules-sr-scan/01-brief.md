@@ -5,15 +5,15 @@ You run the squad's quality scans on the run's changes and **report**; the devel
 `runs/issue-<N>/scan-round<k>.md` (and your work notes).
 
 ## Input
-From the orchestrator: N, round k, the run's lanes and project folders, and the run branch. From `storyrail.config.json`
-→ `scans`: for **Sonar**, **Fortify** and **NexusIQ** a `mode` (`local`, `ci` or `off`), the `commands` per project, and
+From the orchestrator: N, round k and the run branch; the applications are in `runs/issue-<N>/apps.json`. From
+`storyrail.config.json` → `scans`: for **Sonar**, **Fortify** and **NexusIQ** a `mode` (`local`, `ci` or `off`), the `commands` per app type (frontend / backend), and
 the `gate` each must meet. Credentials come from environment variables named there (`SONAR_TOKEN`, `NEXUS_IQ_TOKEN`, …);
 never print them, never write them to a file.
 
-## 1. Company scanners (only for the run's lanes)
-For each scanner and each project in the run whose command is set:
-- **`mode: local`** — run the command from the project folder, with `BRANCH=<run branch>` in the environment, e.g.
-  `(cd projects/backend && BRANCH=story/51-loan-history <command>)`. Then read the result:
+## 1. Company scanners (every application of the run)
+For each scanner and each application, with the command for its type:
+- **`mode: local`** — run the command from the app's folder, with `APP=<app>` and `BRANCH=<run branch>` in the
+  environment, e.g. `(cd projects/backend/INSU-ta01 && APP=INSU-ta01 BRANCH=story/51-task-info <command>)`. Then read the result:
   - **Sonar:** the quality gate status and the open issues on new code. With `sonar.qualitygate.wait=true` the command
     fails when the gate fails; for the issues use the Sonar web API with the token, e.g.
     `curl -fsS -u "$SONAR_TOKEN:" "$SONAR_HOST_URL/api/issues/search?componentKeys=<projectKey>&branch=<branch>&resolved=false&inNewCodePeriod=true&ps=100"`
@@ -23,29 +23,29 @@ For each scanner and each project in the run whose command is set:
   - **NexusIQ:** the CLI prints the policy evaluation and writes the JSON report named in the command (`-r`); read the
     policy violations with their threat level and the component (name, version) that causes each one.
 - **`mode: ci`** — the orchestrator has pushed the run branch. Find its pipeline
-  (`node scripts/storyrail-gitlab.mjs pipeline <repo> --ref <run branch>`), wait for the scan job named in
+  (`node scripts/storyrail-gitlab.mjs pipeline <app> --ref <run branch>`), wait for the scan job named in
   `scans.<tool>.ciJob` (poll every 60 s, at most 30 minutes), then read the job's result
-  (`node scripts/storyrail-gitlab.mjs job-log <repo> <job-id> --tail 200`) and, for Sonar, the web API as above.
+  (`node scripts/storyrail-gitlab.mjs job-log <app> <job-id> --tail 200`) and, for Sonar, the web API as above.
 - **`mode: off`**, or a command still marked `TODO(office)`, or a tool that is not installed → don't guess: report it as
   **not run** with the reason. A scanner that is on but could not run means the gate is **not** met; say so clearly.
 - Scans can take minutes (Fortify often longer). Report progress (`set gate running <p> "Fortify on backend"`) as you go.
 
 ## 2. Quick local checks (always, they take seconds)
-| Area | Command |
+Per application, from its folder:
+| Area | How |
 |---|---|
-| Lint (zero warnings) | `(cd projects/frontend && npm run lint)` and in `projects/frontend/tests/ui` |
-| Types | `npm run typecheck` in the same two |
-| Java warnings | `(cd projects/api-tests && mvn -B -q test-compile)` (compiles with `-Werror`) |
-| Contract copies | each contract copy in `storyrail.config.json` (`projects.*.contract`) must be identical to the backend's: `diff` prints nothing |
-| Secrets | per project: `gitleaks git . --no-banner` if installed, otherwise a careful grep of the diff for keys and tokens |
+| Lint (zero warnings) | frontend: the app's lint script (and its UI tests' lint); backend: the static analysis in its `verify` |
+| Types | frontend: the app's typecheck script |
+| Contract copies | every `contractCopies` entry in `apps.json` must be identical to the provider's `contract`: `diff` prints nothing |
+| Secrets | `gitleaks git . --no-banner` if installed, otherwise a careful grep of the diff for keys and tokens |
 
 Also read the diff for what the tools miss: cognitive complexity, duplicated blocks, magic numbers, unhandled promises.
 
 ## Report file `runs/issue-<N>/scan-round<k>.md`
-1. A table: scanner / check → mode → project → result (gate passed / failed / not run, with the reason).
-2. The findings: id `S<k>-<nn>`, source (Sonar / Fortify / NexusIQ / lint / secrets / contract), severity
+1. A table: scanner / check → mode → application → result (gate passed / failed / not run, with the reason).
+2. The findings: id `S<k>-<nn>`, **application**, source (Sonar / Fortify / NexusIQ / lint / secrets / contract), severity
    (**blocker**: fails a gate, a secret, a Fortify critical, a NexusIQ Critical; **major**: Sonar critical, Fortify high,
-   NexusIQ Severe, a lint error; **minor**: the rest), project and `file:line` (or the component and version for NexusIQ),
+   NexusIQ Severe, a lint error; **minor**: the rest), `file:line` (or the component and version for NexusIQ),
    rule or policy, and the fix (for NexusIQ: the version to move to).
 3. In round 2 and later: which earlier findings are now gone.
 
@@ -60,4 +60,4 @@ why, the decisions you made about severities, and anything odd in the results. Y
 these notes, so write them for someone who did not watch you work. No secrets, tokens or customer data.
 
 ## Completion summary (returned to the orchestrator, ≤ 120 words)
-The results table in short (each scanner: gate passed / failed / not run), the findings count by severity and by lane.
+The results table in short (each scanner: gate passed / failed / not run), the findings count by severity and by application.

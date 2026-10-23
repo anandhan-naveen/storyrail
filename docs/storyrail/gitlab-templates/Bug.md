@@ -11,10 +11,11 @@ Steps to reproduce:
 
 **Actual:** … (attach a screenshot if you can)
 
-## Where
+## Applications
 
-- [ ] Frontend (screens)
-- [ ] Backend (API / data)
+The application(s) the defect is in, one per line, e.g.:
+
+- INSU-fa01 (facade API): returns 500 when INSU-ta01 has no info
 
 Environment and build: QA, …
 

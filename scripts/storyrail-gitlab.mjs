@@ -8,59 +8,24 @@
 //   node scripts/storyrail-gitlab.mjs issue <iid> [--out <dir>]              story/bug as Markdown + its attachments saved to <dir>
 //   node scripts/storyrail-gitlab.mjs comment <iid> (--body <text> | --body-file <file>)
 //   node scripts/storyrail-gitlab.mjs label <iid> <label>                     add a label (e.g. backlog.readyLabel)
-//   node scripts/storyrail-gitlab.mjs mr-create <repo> <branch> <title> [--body-file <file>]
+//   node scripts/storyrail-gitlab.mjs mr-create <repo> <branch> <title> [--body-file <file>]   (target: the repo's default branch)
 //   node scripts/storyrail-gitlab.mjs mr <repo> <mr-iid>                       state, merge status and pipeline of a merge request
 //   node scripts/storyrail-gitlab.mjs mr-merge <repo> <mr-iid>                 merge (squash / remove branch from the config)
 //   node scripts/storyrail-gitlab.mjs pipeline <repo> (--ref <branch> | --sha <commit>)   newest pipeline + its jobs
 //   node scripts/storyrail-gitlab.mjs job-log <repo> <job-id> [--tail <lines>]
 //
-// <repo> is a key of storyrail.config.json → projects (frontend, backend, apiTests), or `hub` or `backlog`.
+// <repo> is an application of the run in progress (e.g. INSU-ta01, from runs/issue-<N>/apps.json), `hub`, `backlog`,
+// or a GitLab project path (group/project).
 // Issue IIDs always belong to the backlog project. Output is plain text for people and agents; exit code 1 on API errors.
 
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { dirname, join, resolve, basename } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { join, basename } from 'node:path';
+import { config, fail as failWith, gitlab, enc, projectFor, defaultBranchFor } from './lib/storyrail.mjs';
 
-const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const config = JSON.parse(readFileSync(join(ROOT, 'storyrail.config.json'), 'utf8'));
-const GL = config.gitlab ?? {};
-
-function fail(msg, code = 2) {
-  console.error(`storyrail-gitlab: ${msg}`);
-  process.exit(code);
-}
-
-const BASE = String(GL.url ?? '').replace(/\/+$/, '');
-if (!BASE || BASE.startsWith('TODO')) fail('set gitlab.url in storyrail.config.json (your GitLab address)');
-const TOKEN = process.env[GL.tokenEnv ?? 'GITLAB_TOKEN'];
-
-function projectPath(key) {
-  const p = key === 'backlog' ? config.backlog?.project : key === 'hub' ? config.hub?.project : config.projects?.[key]?.project;
-  if (!p) fail(`unknown repo "${key}". Use one of: ${[...Object.keys(config.projects ?? {}), 'hub', 'backlog'].join(', ')}`);
-  if (String(p).startsWith('TODO')) fail(`the GitLab project for "${key}" is still a TODO(office) placeholder in storyrail.config.json`);
-  return p;
-}
-const enc = (p) => encodeURIComponent(p);
-
-async function api(method, path, body) {
-  if (!TOKEN) fail(`no token: set the ${GL.tokenEnv ?? 'GITLAB_TOKEN'} environment variable (a personal access token with scope api)`);
-  const res = await fetch(`${BASE}/api/v4${path}`, {
-    method,
-    headers: { 'PRIVATE-TOKEN': TOKEN, ...(body ? { 'Content-Type': 'application/json' } : {}) },
-    body: body ? JSON.stringify(body) : undefined,
-  });
-  const text = await res.text();
-  if (!res.ok) {
-    let msg = text;
-    try {
-      const j = JSON.parse(text);
-      msg = j.message ? JSON.stringify(j.message) : j.error ?? text;
-    } catch { /* not JSON */ }
-    console.error(`storyrail-gitlab: ${method} ${path} → HTTP ${res.status}: ${String(msg).slice(0, 300)}`);
-    process.exit(1);
-  }
-  return text ? JSON.parse(text) : null;
-}
+const TOOL = 'storyrail-gitlab';
+const fail = (msg, code) => failWith(TOOL, msg, code);
+const { base: BASE, api, raw, token: TOKEN } = gitlab(TOOL);
+const projectPath = (key) => projectFor(TOOL, key);
 
 async function download(projectId, projectFullPath, secret, filename, outDir) {
   // GitLab 17.4+ has an API route for uploads; older versions only serve them on the web path.
@@ -69,7 +34,7 @@ async function download(projectId, projectFullPath, secret, filename, outDir) {
     `${BASE}/${projectFullPath}/uploads/${secret}/${enc(filename)}`,
   ];
   for (const url of urls) {
-    const res = await fetch(url, { headers: { 'PRIVATE-TOKEN': TOKEN } });
+    const res = await raw(url);
     const type = res.headers.get('content-type') ?? '';
     if (res.ok && !type.includes('text/html')) {
       const file = join(outDir, basename(filename));
@@ -151,11 +116,10 @@ switch (cmd) {
   case 'mr-create': {
     const [repo, branch, title] = args;
     if (!repo || !branch || !title) fail('mr-create needs <repo> <branch> <title> [--body-file <file>]');
-    const project = config.projects?.[repo] ?? config[repo] ?? {};
     const description = opt(args, '--body-file') ? readFileSync(opt(args, '--body-file'), 'utf8') : '';
     const mr = await api('POST', `/projects/${enc(projectPath(repo))}/merge_requests`, {
       source_branch: branch,
-      target_branch: project.defaultBranch ?? 'main',
+      target_branch: defaultBranchFor(repo),
       title,
       description,
       squash: Boolean(config.mergeRequests?.squash),
@@ -208,8 +172,7 @@ switch (cmd) {
   case 'job-log': {
     const [repo, jobId] = args;
     if (!repo || !jobId) fail('job-log needs <repo> <job-id> [--tail <lines>]');
-    if (!TOKEN) fail(`no token: set the ${GL.tokenEnv ?? 'GITLAB_TOKEN'} environment variable`);
-    const res = await fetch(`${BASE}/api/v4/projects/${enc(projectPath(repo))}/jobs/${jobId}/trace`, { headers: { 'PRIVATE-TOKEN': TOKEN } });
+    const res = await raw(`${BASE}/api/v4/projects/${enc(projectPath(repo))}/jobs/${jobId}/trace`);
     if (!res.ok) fail(`job log → HTTP ${res.status}`, 1);
     const tail = Number(opt(args, '--tail') ?? 80);
     console.log((await res.text()).split('\n').slice(-tail).join('\n'));

@@ -21,8 +21,8 @@ customModes:
           description: "Run reports only (runs/)"
   - slug: sr-req-fetch
     name: "StoryRail · Requirement analysis"
-    description: "StoryRail requirement analysis. Reads the GitLab user story or bug with its Screen and API documents, decides the lanes (frontend/backend), makes every acceptance criterion testable and writes the run spec plus any API contract changes."
-    roleDefinition: "You are the StoryRail requirement analysis agent. You read the GitLab issue you are given and the functional documents attached to it, decide the lanes, make every acceptance criterion testable and write the run spec. You never invent requirements: anything unclear becomes a question."
+    description: "StoryRail requirement analysis. Reads the GitLab user story or bug with its Screen and API documents, finds the applications it touches, makes every acceptance criterion testable and writes the run spec plus any API contract changes."
+    roleDefinition: "You are the StoryRail requirement analysis agent. You read the GitLab issue you are given and the functional documents attached to it, find the applications it touches and how they call each other, make every acceptance criterion testable and write the run spec. You never invent requirements: anything unclear becomes a question."
     whenToUse: "Use at the start of every /storyrail run and defect loop."
     customInstructions: "Follow your brief in .bob/rules-sr-req-fetch/ exactly. Report progress only through node scripts/storyrail-status.mjs."
     groups:
@@ -30,12 +30,12 @@ customModes:
       - execute
       - mcp
       - - edit
-        - fileRegex: "^(runs/.*|projects/backend/docs/api/openapi\\.yaml|projects/frontend/contract/openapi\\.yaml|projects/api-tests/contract/openapi\\.yaml)$"
-          description: "Run spec, downloaded documents and the three contract files only"
+        - fileRegex: "^(runs/.*|projects/(frontend|backend)/[^/]+/(.*/)?[^/]*(openapi|swagger)[^/]*\\.(ya?ml|json))$"
+          description: "Run folder and the applications' API contracts only"
   - slug: sr-fe-dev
     name: "StoryRail · Frontend dev"
-    description: "StoryRail frontend developer. Implements the frontend part of a run spec with unit tests (step 2), and fixes the frontend findings of the review and the quality scans (step 5)."
-    roleDefinition: "You are the StoryRail frontend developer: React 18 + TypeScript (strict), Vite, Vitest + Testing Library. You build the screens of the Screen document with unit tests, and you fix the review and scan findings in the frontend, keeping every frontend gate green."
+    description: "StoryRail frontend developer. Implements the frontend applications of a run spec with unit tests (step 2), and fixes their findings from the review and the quality scans (step 5)."
+    roleDefinition: "You are the StoryRail frontend developer: React 18 + TypeScript (strict), Vite, Vitest + Testing Library. You build the screens of one frontend application from the Screen document with unit tests, against the contracts of the apps it calls, and you fix the review and scan findings of that app, keeping every gate green."
     whenToUse: "Step 2 when the spec's lanes include frontend; step 5 when the review or the scans found something in the frontend."
     customInstructions: "Follow your brief in .bob/rules-sr-fe-dev/ exactly. Report progress only through node scripts/storyrail-status.mjs."
     groups:
@@ -43,20 +43,20 @@ customModes:
       - execute
       - mcp
       - - edit
-        - fileRegex: "^(projects/frontend/(?!contract/|\\.gitlab-ci\\.yml|\\.github/).*|runs/[^/]+/(notes/fe-(dev|fix)\\.md|fixes-round\\d+-fe\\.md))$"
-          description: "library-frontend code and tests (not its contract or CI), plus its notes and fix responses"
+        - fileRegex: "^(projects/frontend/[^/]+/(?!\\.gitlab-ci\\.yml|\\.github/)(?!(.*/)?[^/]*(openapi|swagger)[^/]*\\.(ya?ml|json)$).*|runs/[^/]+/(notes/(dev|fix)@[^/]+\\.md|fixes-round\\d+-[^/]+\\.md))$"
+          description: "Frontend applications (not their contracts or CI), plus notes and fix responses"
   - slug: sr-be-dev
     name: "StoryRail · Backend dev"
-    description: "StoryRail backend developer. Implements the backend part of a run spec with unit tests (step 2), and fixes the backend findings of the review and the quality scans (step 5)."
-    roleDefinition: "You are the StoryRail backend developer: Java 21, Spring Boot 3.5, Maven, Spring Data JPA, Bean Validation, ProblemDetail errors. You build the API of the API document with unit tests, and you fix the review and scan findings in the backend and its API tests, keeping `mvn verify` green."
+    description: "StoryRail backend developer. Implements the backend applications of a run spec with unit tests, one app per instance (step 2), and fixes their findings from the review and the quality scans (step 5)."
+    roleDefinition: "You are the StoryRail backend developer: Java 21, Spring Boot 3.5, Maven, Spring Data JPA, Bean Validation, ProblemDetail errors. You build the API of one backend application from the API document with unit tests, against the contracts of the apps it calls, and you fix the review and scan findings of that app, keeping its build green."
     whenToUse: "Step 2 when the spec's lanes include backend; step 5 when the review or the scans found something in the backend."
     customInstructions: "Follow your brief in .bob/rules-sr-be-dev/ exactly. Report progress only through node scripts/storyrail-status.mjs."
     groups:
       - read
       - execute
       - - edit
-        - fileRegex: "^(projects/backend/(?!docs/api/|\\.gitlab-ci\\.yml|\\.github/).*|projects/api-tests/src/test/.*|runs/[^/]+/(notes/be-(dev|fix)\\.md|fixes-round\\d+-be\\.md))$"
-          description: "library-backend code (not its contract or CI) and the API tests, plus its notes and fix responses"
+        - fileRegex: "^(projects/backend/[^/]+/(?!\\.gitlab-ci\\.yml|\\.github/)(?!(.*/)?[^/]*(openapi|swagger)[^/]*\\.(ya?ml|json)$).*|runs/[^/]+/(notes/(dev|fix)@[^/]+\\.md|fixes-round\\d+-[^/]+\\.md))$"
+          description: "Backend applications (not their contracts or CI), plus notes and fix responses"
   - slug: sr-ui-tests
     name: "StoryRail · Isolated UI automation"
     description: "StoryRail isolated UI automation. Writes and runs Playwright tests for the frontend acceptance criteria against a local build with a mocked API."
@@ -67,8 +67,8 @@ customModes:
       - read
       - execute
       - - edit
-        - fileRegex: "^(projects/frontend/tests/ui/|runs/).*"
-          description: "UI tests and findings only"
+        - fileRegex: "^(projects/frontend/[^/]+/(tests|e2e|playwright)/|runs/).*"
+          description: "UI tests of the frontend applications, plus findings"
   - slug: sr-api-tests
     name: "StoryRail · API automation"
     description: "StoryRail API automation. Writes and runs black-box Cucumber + Java (RestAssured) acceptance scenarios for the backend acceptance criteria, against the locally running backend."
@@ -79,8 +79,8 @@ customModes:
       - read
       - execute
       - - edit
-        - fileRegex: "^(projects/api-tests/(src/test/|README\\.md)|runs/).*"
-          description: "API test scenarios, steps and README, plus findings"
+        - fileRegex: "^(projects/backend/[^/]+/src/test/|runs/).*"
+          description: "Tests of the backend applications (Cucumber features and steps), plus findings"
   - slug: sr-reviewer
     name: "StoryRail · Tech lead review"
     description: "StoryRail tech lead / strict code reviewer. Read-only review of a run's changes against the acceptance criteria, the functional documents, the contract and the conventions. Blocks on any real defect."

@@ -22,15 +22,15 @@ stage in between and you deciding at the two points that matter (clarifications 
 | # | Stage | Who |
 |---|---|---|
 | 1 | Requirement analysis | You run `/storyrail <issue>` → **Sindhu** reads the GitLab story and its Screen and API documents. Anything unclear: she asks, the orchestrator asks **you** in the chat and posts the answers on the issue |
-| 2 | Build | **Frontend dev** ∥ **Backend dev**, each with unit tests. Only the lanes the story needs; the other developer stays idle |
-| 3 | Isolated tests | **Isolated UI automation** (frontend) ∥ **API automation** against the local backend (backend) |
+| 2 | Build | One developer per application the story names, **all at the same time**, each with unit tests, against its providers' contracts with the providers stubbed |
+| 3 | Isolated tests | Per app: **UI automation** (frontend, API mocked) ∥ **API automation** (backend running locally, providers stubbed) |
 | 4 | Review + scans | **Tech lead review** (read-only) ∥ **Quality scans**: Sonar, Fortify and NexusIQ, locally or through the branch pipeline |
-| 5 | Fix | **The developers** fix the findings of their own lane, side by side |
-| 6 | Re-run tests + re-check | **UI** ∥ **API automation** re-run their suites on the fixed code, then review and scans again; max 2 fix rounds |
-| 7 | Merge + CI | One merge request per repo; **you approve the merge**; backend, API tests, frontend; StoryRail follows each GitLab CI pipeline on the default branch until it is green |
+| 5 | Fix | **The developers** fix the findings of their own app, side by side |
+| 6 | Re-run tests + re-check | The test agents of the changed apps re-run their suites on the fixed code, then review and scans again; max 2 fix rounds |
+| 7 | Merge + CI | One merge request per app; **you approve the merge**; providers first (e.g. INSU-ta01, INSU-fa01, INSU-sp01); StoryRail follows each GitLab CI pipeline on the default branch until it is green |
 
 The story is then commented and labelled **Ready for QA**. Bugs the testers log go through the **defect loop**
-(`/storyrail fix <bug>`): the same rail for the affected lane only, with a regression test. Details:
+(`/storyrail fix <bug>`): the same rail for the affected app only, with a regression test. Details:
 [docs/storyrail/PIPELINE.md](docs/storyrail/PIPELINE.md).
 
 ## How to run it
@@ -44,7 +44,7 @@ One-time setup: [docs/storyrail/SETUP.md](docs/storyrail/SETUP.md) (GitLab token
 cd storyrail
 git switch bob && git pull
 node scripts/storyrail-gitlab.mjs whoami      # GitLab and your token work
-node scripts/storyrail-workspace.mjs sync     # clones or updates the project repos in projects/
+node scripts/storyrail-workspace.mjs sync     # references only; the story's apps are cloned by the run itself
 node scripts/storyrail-dashboard.mjs          # leave this terminal open
 ```
 

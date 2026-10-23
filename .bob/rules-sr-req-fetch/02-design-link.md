@@ -2,7 +2,7 @@
 
 # Design links
 
-When `designSystem.enabled` is `true` and the frontend lane is in scope:
+When `designSystem.enabled` is `true` and a frontend application is in the run:
 
 - Copy every Figma link from the issue (the "Design (Figma)" field of the story template, or links in the notes) into a
   `## Design` section of `spec.md`, placed after `## Acceptance criteria`. Name what each frame shows (screen, state).

@@ -8,7 +8,7 @@ documents are in GitLab, and ends when the merged code's GitLab CI pipeline is g
 
 | File | What it does |
 |---|---|
-| `.bob/custom_modes.yaml` | The 8 StoryRail modes (orchestrator + 7 agents). Each mode may only **edit** its own folders (`fileRegex`), e.g. the frontend dev only `projects/frontend/` (not its contract or CI file), so "stay in your lane" is enforced, not just asked. The reviewer has no edit rights at all. |
+| `.bob/custom_modes.yaml` | The 8 StoryRail modes (orchestrator + 7 agents). Each mode may only **edit** its own folders (`fileRegex`), e.g. the frontend dev only the frontend apps in `projects/frontend/<app>/` (not their contracts or CI files), so "stay in your lane" is enforced, not just asked. The reviewer has no edit rights at all. |
 | `scripts/storyrail-lanes.mjs` | The same lanes as a check for the parallel stages, which run as subagents: `lanes` lists them, `check <lanes>` fails on any file changed outside them. |
 | `.bob/rules/01-project-guide.md` | Project conventions, loaded in every mode. |
 | `.bob/rules-<mode>/01-brief.md` | The full brief of one mode (what to do, gates, what to report). |
@@ -64,21 +64,25 @@ Put the hub (this repo) and the projects on your GitLab. Then fill in `storyrail
 | `backlog.project` | The GitLab project with the user stories and bugs, e.g. `squad/backlog` |
 | `backlog.readyLabel` | The label a finished story gets (default `Ready for QA`) |
 | `hub.project` | This repo on GitLab |
-| `projects.frontend` / `backend` / `apiTests` | Each project's GitLab path (`project`), `cloneUrl` and `defaultBranch`. Set `apiTests` to `null` if your API automation lives in the backend repo |
-| `mergeRequests` | Squash, remove the source branch, wait for the MR pipeline, merge order |
+| `gitlab.group` | The GitLab group your applications live in, e.g. `insu`. Apps are found there by name, so there is **no per-app setup** |
+| `apps.map` | Only for an app whose story name doesn't match its GitLab project: `"INSU-ta01": "insu/tasks/insu-ta01-api"`. Usually empty |
+| `appTypes.frontend` / `backend` | How every app of that type is verified, run, tested and stubbed (`npm`/`mvn` commands); one setting for all apps |
+| `build.mode` | `parallel` (all apps at once, default) or `sequential` |
+| `mergeRequests` | Squash, remove the source branch, wait for the MR pipeline (merge order comes from the apps' dependencies) |
 | `scans` | See section 3 |
 
 `node scripts/storyrail-workspace.mjs todo` lists every `TODO(office)` value still to fill in. Then:
 
 ```bash
 node scripts/storyrail-gitlab.mjs whoami        # "signed in as …": the URL and the token work
-node scripts/storyrail-workspace.mjs sync       # clones the projects into projects/
-(cd projects/frontend && npm ci) && (cd projects/frontend/tests/ui && npm ci && npx playwright install chromium)
-(cd projects/api-tests && mvn -B -q test-compile)   # downloads the Cucumber/RestAssured dependencies once
+node scripts/storyrail-apps.mjs discover 0 --apps "INSU-ta01"   # optional dry run: finds and clones one app
+npx playwright install chromium                 # once, for the UI automation
 ```
 
 **Issue templates.** Copy `docs/storyrail/gitlab-templates/*.md` to `.gitlab/issue_templates/` in the backlog project, so
-every story has the same shape: story, acceptance criteria, the Frontend / Backend ticks and the attached documents.
+every story has the same shape: story, acceptance criteria, the **Applications** section and the attached documents.
+The Applications section is what tells StoryRail which apps to build: one bullet per app, `- INSU-fa01 (facade, calls INSU-ta01)`.
+If it's missing, Sindhu proposes the apps from the documents and asks you.
 
 ### IBM Bob
 
@@ -99,7 +103,7 @@ StoryRail runs many small steps, so approve the routine ones and keep the risky 
 | Todo | auto-approve | Progress list |
 | Subtask | auto-approve | The orchestrator hands each stage to its mode |
 | Mode | auto-approve | `/storyrail` switches to the orchestrator mode |
-| Subagent | auto-approve | Runs the parallel stages (FE ∥ BE, UI ∥ API, review ∥ scans, FE fixes ∥ BE fixes); the lane check guards them |
+| Subagent | auto-approve | Runs the parallel stages (one build, test and fix agent per app, review ∥ scans); the lane check guards them |
 | MCP | auto-approve for read tools | GitLab and Figma reads |
 | Execute | **ask** at first | Look at what it runs during your first story; auto-approve once you trust it |
 
@@ -219,12 +223,13 @@ requests from the dashboard page itself. Chats are kept per member in `.storyrai
 
 ## Good to know
 
-- **Parallel stages.** Build (frontend ∥ backend), isolated tests (UI ∥ API), review ∥ scans and the fixes (frontend ∥
-  backend) run **at the same time** as two Bob subagents. Subagents don't get their mode's file limits, so
+- **Parallel stages.** Build, isolated tests and fixes run **one subagent per application, all at the same time**, and
+  review ∥ scans side by side. Each app builds against its providers' contracts with the providers stubbed; each backend
+  runs its tests on its own port (8081, 8082, …) with its stub on port + 100. Subagents don't get their mode's file limits, so
   `scripts/storyrail-lanes.mjs` checks every changed file afterwards: anything outside the agents' lanes fails the stage
   and goes back to that agent. If subagents aren't allowed in your Bob setup, the orchestrator runs them one after the other.
-- **Only one lane?** A frontend-only story leaves the backend developer, the API automation and the backend fixes idle
-  (shown as "not needed" on the dashboard), and the other way round.
+- **Any mix of apps.** One frontend, two backends, three backends: the dashboard draws one lane per app. A member with no
+  app of their kind in the story shows as "not needed". Merging follows the dependencies, providers first.
 - **Nothing reaches the default branch without your yes.** Branches may be pushed earlier (for CI-mode scans and the
   merge requests), but merging only happens after you approve it in the chat.
 - **Your computer must stay awake** during a run (Fortify scans can take a while): `caffeinate -i` in another terminal.
@@ -245,7 +250,8 @@ requests from the dashboard page itself. Chats are kept per member in `.storyrai
 | "Edit not allowed" in a mode | Working as intended: that file is outside the mode's lane. The orchestrator sends it to the right mode. |
 | A scanner shows "not run" | Its command is still `TODO(office)`, the tool isn't installed, or its token is missing. Fix it or set its mode to `ci`/`off`. |
 | Backend steps say "Maven missing" | Install Java 21 and Maven 3.9, then open a new terminal. |
-| Playwright "browser not installed" | `(cd projects/frontend/tests/ui && npx playwright install chromium)` |
-| `projects/frontend` missing, or "has uncommitted changes" | `node scripts/storyrail-workspace.mjs sync`; for uncommitted changes, commit or discard them in that project first. |
+| Playwright "browser not installed" | `npx playwright install chromium` |
+| "no project found" / "several projects match" for an app | Check the name in the story's Applications section and `gitlab.group`, or add the app to `apps.map`. |
+| An app "has uncommitted changes" | Discovery won't overwrite work: commit or discard the changes in `projects/<type>/<app>` first. |
 | Dashboard shows "dashboard server stopped" | `node scripts/storyrail-dashboard.mjs` in a separate terminal. |
 | A stage fails twice | The orchestrator stops and tells you why. Fix or answer, then say "continue". |

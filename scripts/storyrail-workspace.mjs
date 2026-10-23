@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-// StoryRail workspace: the project repos StoryRail works on, cloned side by side under projects/.
+// StoryRail workspace: read-only reference apps (references.*) cloned under references/, and any fixed projects.
+// The applications of a story are cloned per run by scripts/storyrail-apps.mjs (projects/<type>/<app>).
 // Reads storyrail.config.json. Never changes a project with uncommitted work.
 //
 // Usage:
@@ -27,7 +28,7 @@ function fail(msg) {
   process.exit(2);
 }
 
-const projects = Object.entries(config.projects).filter(([, p]) => p);
+const projects = Object.entries(config.projects ?? {}).filter(([, p]) => p); // fixed projects (none in the office setup: apps come per run)
 const references = Object.entries(config.references ?? {})
   .filter(([, r]) => r && r.enabled)
   .map(([name, r]) => {
